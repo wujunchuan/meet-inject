@@ -6,7 +6,7 @@
   "browser": "dist/meetone-webview-inject.iife.js",
   "dependencies": {
     "buffer": "^5.2.1",
-    "meet-bridge": "^2.0.2-release"
+    "meet-bridge": "^2.1.0"
   },
   "devDependencies": {
     "babel-core": "^6.26.3",
