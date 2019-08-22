@@ -3,7 +3,7 @@
  * @Author: JohnTrump
  * @Date: 2019-03-28 10:38:23
  * @Last Modified by: JohnTrump
- * @Last Modified time: 2019-03-30 18:58:04
+ * @Last Modified time: 2019-08-22 16:01:09
  */
 // const Buffer = require('buffer/').Buffer  // note: the trailing slash is important!
 import {Buffer} from 'buffer/';
@@ -185,7 +185,6 @@ export default class ScatterInject {
       tokenName: tokenDetails.symbol,
       tokenPrecision: tokenDetails.decimals
     }).then(function (res) {
-      console.log('meetBridge.invokeTransfer fuck', res);
       if (res.code === 0) {
       // TODO: 回调问题等客户端修复
         return Promise.resolve(res.data);
@@ -297,7 +296,6 @@ export default class ScatterInject {
       const api = new Eos({ rpc: eosOptions.rpc });
       let signatureProvider = this.hookProvider(network, requiredFields, eosOptions.beta3 || false, api);
 
-      console.log('provider:' + JSON.stringify(signatureProvider));
       const eos = new Eos(Object.assign(eosOptions, {
         signatureProvider: signatureProvider
       }));
