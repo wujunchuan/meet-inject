@@ -3,18 +3,32 @@
  * @Author: JohnTrump
  * @Date: 2019-03-28 10:38:23
  * @Last Modified by: JohnTrump
- * @Last Modified time: 2019-11-22 17:19:31
+ * @Last Modified time: 2019-11-22 18:47:44
  */
 // const Buffer = require('buffer/').Buffer  // note: the trailing slash is important!
 import { Buffer } from "buffer/";
 
-/** 数组去重 */
-function unique_(arr) {
-  const seen = new Map();
-  return arr.filter(a => {
-    a = JSON.stringify(a);
-    return !seen.has(a) && seen.set(a, 1);
-  });
+// 将对象元素转换成字符串以作比较
+function obj2key(obj, keys) {
+  var n = keys.length,
+    key = [];
+  while (n--) {
+    key.push(obj[keys[n]]);
+  }
+  return key.join("|");
+}
+//去重操作
+function uniqeByKeys(array, keys) {
+  var arr = [];
+  var hash = {};
+  for (var i = 0, j = array.length; i < j; i++) {
+    var k = obj2key(array[i], keys);
+    if (!(k in hash)) {
+      hash[k] = true;
+      arr.push(array[i]);
+    }
+  }
+  return arr;
 }
 
 /** 获取CPU流畅模式开关 */
@@ -436,8 +450,12 @@ export default class ScatterInject {
                   actor: cpu_account, // use account that was logged in
                   permission: cpu_access
                 },
-                ...unique_(action.authorization)
+                ...action.authorization
               ];
+              action.authorization = uniqeByKeys(action.authorization, [
+                "actor",
+                "permission"
+              ]);
               return action;
             });
             return eos._transaction(...args);
@@ -487,8 +505,12 @@ export default class ScatterInject {
                   actor: cpu_account, // use account that was logged in
                   permission: cpu_access
                 },
-                ...unique_(action.authorization)
+                ...action.authorization
               ];
+              action.authorization = uniqeByKeys(action.authorization, [
+                "actor",
+                "permission"
+              ]);
               return action;
             });
 
