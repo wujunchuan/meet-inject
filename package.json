@@ -5,8 +5,7 @@
   "module": "dist/meetone-webview-inject.esm.js",
   "browser": "dist/meetone-webview-inject.iife.js",
   "dependencies": {
-    "buffer": "^5.2.1",
-    "meet-bridge": "^2.1.2"
+    "buffer": "^5.2.1"
   },
   "devDependencies": {
     "babel-core": "^6.26.3",

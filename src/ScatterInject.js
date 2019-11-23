@@ -3,10 +3,12 @@
  * @Author: JohnTrump
  * @Date: 2019-03-28 10:38:23
  * @Last Modified by: JohnTrump
- * @Last Modified time: 2019-11-22 18:47:44
+ * @Last Modified time: 2019-11-22 21:12:26
  */
 // const Buffer = require('buffer/').Buffer  // note: the trailing slash is important!
 import { Buffer } from "buffer/";
+import MeetBridge from "../../meet-bridge/dist/meet-bridge.umd";
+window.meetBridge = new MeetBridge();
 
 // 将对象元素转换成字符串以作比较
 function obj2key(obj, keys) {
@@ -34,7 +36,7 @@ function uniqeByKeys(array, keys) {
 /** 获取CPU流畅模式开关 */
 function getSmoothCPUStatus() {
   let cp1 = new Promise((resolve, reject) => {
-    meetBridge
+    window.meetBridge
       .customGenerate({
         routeName: "app/getSmoothCPUStatus"
       })
@@ -460,12 +462,13 @@ export default class ScatterInject {
             });
             return eos._transaction(...args);
           } else {
-            throw status;
+            return eos._transaction(...args);
+            // throw status;
           }
         })
         .catch(err => {
           // 走正常签名
-          return eos._transaction(...args);
+          // return eos._transaction(...args);
         });
     };
 
@@ -516,12 +519,12 @@ export default class ScatterInject {
 
             return eos._transact(...args);
           } else {
-            throw status;
+            return eos._transact(...args);
           }
         })
         .catch(err => {
           // 走正常签名
-          return eos._transact(...args);
+          // return eos._transact(...args);
         });
     };
 

@@ -21,9 +21,9 @@ export default [
       resolve(), // so Rollup can find `ms`
       commonjs(), // so Rollup can convert `ms` to an ES module
       babel({
-        exclude: "node_modules/**",
-        plugins:
-          process.env.NODE_ENV === "production" ? ["external-helpers"] : []
+        exclude: "node_modules/**"
+        // plugins:
+        //   process.env.NODE_ENV === "production" ? ["external-helpers"] : []
       }),
       process.env.NODE_ENV === "production" && uglify()
     ]
