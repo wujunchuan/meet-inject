@@ -3,13 +3,17 @@
  * @Author: JohnTrump
  * @Date: 2019-03-30 18:55:39
  * @Last Modified by: JohnTrump
- * @Last Modified time: 2019-11-23 15:42:29
+ * @Last Modified time: 2019-11-24 21:30:41
  */
 import ScatterInject from "./ScatterInject";
 
 export default function main() {
   // 先初始化MEETONE协议桥
   new ScatterInject();
+  // setTimeout(() => {
+  // 测试代码
+  //   new ScatterInject();
+  // }, 100);
 
   // 超时时间设定, 因为不能比较好的兼容旧版本,只能在新版本发包前,往已有的JS中注入全局变量 `isSupportMeetoneSdk`来兼容
   window.document.addEventListener("message", e => {

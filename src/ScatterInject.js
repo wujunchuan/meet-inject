@@ -3,7 +3,7 @@
  * @Author: JohnTrump
  * @Date: 2019-03-28 10:38:23
  * @Last Modified by: JohnTrump
- * @Last Modified time: 2019-11-22 21:12:26
+ * @Last Modified time: 2019-11-24 21:31:17
  */
 // const Buffer = require('buffer/').Buffer  // note: the trailing slash is important!
 import { Buffer } from "buffer/";
@@ -440,36 +440,40 @@ export default class ScatterInject {
     eos._transaction = eos.transaction;
     let _this = this;
     eos.transaction = function(...args) {
-      getSmoothCPUStatus()
-        .then(({ status, available, cpu_account, cpu_access, cpu_public }) => {
-          if (status && available) {
-            _this.cosignPublicKey = cpu_public;
-            let _transaction = args[0];
-            let _actions = _transaction.actions;
-            _actions.map(action => {
-              action.authorization = [
-                {
-                  actor: cpu_account, // use account that was logged in
-                  permission: cpu_access
-                },
-                ...action.authorization
-              ];
-              action.authorization = uniqeByKeys(action.authorization, [
-                "actor",
-                "permission"
-              ]);
-              return action;
-            });
-            return eos._transaction(...args);
-          } else {
-            return eos._transaction(...args);
-            // throw status;
+      return new Promise((resolve, reject) => {
+        getSmoothCPUStatus().then(
+          ({ status, available, cpu_account, cpu_access, cpu_public }) => {
+            if (status && available) {
+              _this.cosignPublicKey = cpu_public;
+              let _transaction = args[0];
+              let _actions = _transaction.actions;
+              _actions.map(action => {
+                action.authorization = [
+                  {
+                    actor: cpu_account, // use account that was logged in
+                    permission: cpu_access
+                  },
+                  ...action.authorization
+                ];
+                action.authorization = uniqeByKeys(action.authorization, [
+                  "actor",
+                  "permission"
+                ]);
+                return action;
+              });
+              eos
+                ._transaction(...args)
+                .then(res => resolve(res))
+                .catch(err => reject(err));
+            } else {
+              eos
+                ._transaction(...args)
+                .then(res => resolve(res))
+                .catch(err => reject(err));
+            }
           }
-        })
-        .catch(err => {
-          // 走正常签名
-          // return eos._transaction(...args);
-        });
+        );
+      });
     };
 
     return eos;
@@ -495,37 +499,42 @@ export default class ScatterInject {
     eos._transact = eos.transact;
     let _this = this;
     eos.transact = function(...args) {
-      getSmoothCPUStatus()
-        .then(({ status, available, cpu_account, cpu_access, cpu_public }) => {
-          if (status && available) {
-            // 走代签逻辑
-            _this.cosignPublicKey = cpu_public;
-            let _transaction = args[0];
-            let _actions = _transaction.actions;
-            _actions.map(action => {
-              action.authorization = [
-                {
-                  actor: cpu_account, // use account that was logged in
-                  permission: cpu_access
-                },
-                ...action.authorization
-              ];
-              action.authorization = uniqeByKeys(action.authorization, [
-                "actor",
-                "permission"
-              ]);
-              return action;
-            });
+      return new Promise((resolve, reject) => {
+        getSmoothCPUStatus().then(
+          ({ status, available, cpu_account, cpu_access, cpu_public }) => {
+            if (status && available) {
+              // 走代签逻辑
+              _this.cosignPublicKey = cpu_public;
+              let _transaction = args[0];
+              let _actions = _transaction.actions;
+              _actions.map(action => {
+                action.authorization = [
+                  {
+                    actor: cpu_account, // use account that was logged in
+                    permission: cpu_access
+                  },
+                  ...action.authorization
+                ];
+                action.authorization = uniqeByKeys(action.authorization, [
+                  "actor",
+                  "permission"
+                ]);
+                return action;
+              });
 
-            return eos._transact(...args);
-          } else {
-            return eos._transact(...args);
+              eos
+                ._transact(...args)
+                .then(res => resolve(res))
+                .catch(err => reject(err));
+            } else {
+              eos
+                ._transact(...args)
+                .then(res => resolve(res))
+                .catch(err => reject(err));
+            }
           }
-        })
-        .catch(err => {
-          // 走正常签名
-          // return eos._transact(...args);
-        });
+        );
+      });
     };
 
     return eos;
