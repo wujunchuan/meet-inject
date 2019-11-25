@@ -3,12 +3,17 @@
  * @Author: JohnTrump
  * @Date: 2019-03-28 10:38:23
  * @Last Modified by: JohnTrump
- * @Last Modified time: 2019-11-24 21:31:17
+ * @Last Modified time: 2019-11-25 13:24:25
  */
 // const Buffer = require('buffer/').Buffer  // note: the trailing slash is important!
 import { Buffer } from "buffer/";
 import MeetBridge from "../../meet-bridge/dist/meet-bridge.umd";
 window.meetBridge = new MeetBridge();
+
+// 翻转Hex
+function reverseHex(h) {
+  return h.substr(6, 2) + h.substr(4, 2) + h.substr(2, 2) + h.substr(0, 2);
+}
 
 // 将对象元素转换成字符串以作比较
 function obj2key(obj, keys) {
@@ -442,7 +447,14 @@ export default class ScatterInject {
     eos.transaction = function(...args) {
       return new Promise((resolve, reject) => {
         getSmoothCPUStatus().then(
-          ({ status, available, cpu_account, cpu_access, cpu_public }) => {
+          ({
+            status,
+            available,
+            cpu_account,
+            cpu_access,
+            cpu_public,
+            block_id
+          }) => {
             if (status && available) {
               _this.cosignPublicKey = cpu_public;
               let _transaction = args[0];
@@ -461,6 +473,20 @@ export default class ScatterInject {
                 ]);
                 return action;
               });
+              /**
+               * Decode from block_id
+               * `ref_block_num`
+               * `ref_block_prefix
+               */
+              if (block_id) {
+                _transaction = Object.assign(_transaction, {
+                  ref_block_num: parseInt(block_id.substr(0, 8), 16) & 0xffff,
+                  ref_block_prefix: parseInt(
+                    reverseHex(block_id.substr(16, 8)),
+                    16
+                  )
+                });
+              }
               eos
                 ._transaction(...args)
                 .then(res => resolve(res))
@@ -501,7 +527,14 @@ export default class ScatterInject {
     eos.transact = function(...args) {
       return new Promise((resolve, reject) => {
         getSmoothCPUStatus().then(
-          ({ status, available, cpu_account, cpu_access, cpu_public }) => {
+          ({
+            status,
+            available,
+            cpu_account,
+            cpu_access,
+            cpu_public,
+            block_id
+          }) => {
             if (status && available) {
               // 走代签逻辑
               _this.cosignPublicKey = cpu_public;
@@ -521,7 +554,20 @@ export default class ScatterInject {
                 ]);
                 return action;
               });
-
+              /**
+               * Decode from block_id
+               * `ref_block_num`
+               * `ref_block_prefix
+               */
+              if (block_id) {
+                _transaction = Object.assign(_transaction, {
+                  ref_block_num: parseInt(block_id.substr(0, 8), 16) & 0xffff,
+                  ref_block_prefix: parseInt(
+                    reverseHex(block_id.substr(16, 8)),
+                    16
+                  )
+                });
+              }
               eos
                 ._transact(...args)
                 .then(res => resolve(res))
