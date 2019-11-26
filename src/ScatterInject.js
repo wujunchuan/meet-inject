@@ -3,7 +3,7 @@
  * @Author: JohnTrump
  * @Date: 2019-03-28 10:38:23
  * @Last Modified by: JohnTrump
- * @Last Modified time: 2019-11-25 13:24:25
+ * @Last Modified time: 2019-11-26 14:45:28
  */
 // const Buffer = require('buffer/').Buffer  // note: the trailing slash is important!
 import { Buffer } from "buffer/";
@@ -38,7 +38,29 @@ function uniqeByKeys(array, keys) {
   return arr;
 }
 
+/** 通知客户端变更流畅模式的开关 */
+// 限制10s超时
+function setSmoothCPUStatus(status) {
+  let cp1 = new Promise((resolve, reject) => {
+    window.meetBridge
+      .customGenerate({
+        routeName: "app/setSmoothCPUStatus",
+        params: {
+          status: !!status
+        }
+      })
+      .then(res => {
+        resolve();
+      })
+      .catch(err => {
+        reject(err);
+      });
+  });
+  return timeoutPromise(cp1, 1000 * 10);
+}
+
 /** 获取CPU流畅模式开关 */
+// 限制30s超时
 function getSmoothCPUStatus() {
   let cp1 = new Promise((resolve, reject) => {
     window.meetBridge
@@ -75,7 +97,7 @@ function getSmoothCPUStatus() {
         reject(err);
       });
   });
-  return timeoutPromise(cp1, 1000);
+  return timeoutPromise(cp1, 30 * 1000);
 }
 
 function delayPromise(ms) {
@@ -86,7 +108,7 @@ function delayPromise(ms) {
 
 function timeoutPromise(promise, ms) {
   var timeout = delayPromise(ms).then(function() {
-    throw new Error("Operation timed out after " + ms + " ms");
+    throw new Error("OPERATION_TIME_OUT");
   });
   return Promise.race([promise, timeout]);
 }
@@ -446,59 +468,98 @@ export default class ScatterInject {
     let _this = this;
     eos.transaction = function(...args) {
       return new Promise((resolve, reject) => {
-        getSmoothCPUStatus().then(
-          ({
-            status,
-            available,
-            cpu_account,
-            cpu_access,
-            cpu_public,
-            block_id
-          }) => {
-            if (status && available) {
-              _this.cosignPublicKey = cpu_public;
-              let _transaction = args[0];
-              let _actions = _transaction.actions;
-              _actions.map(action => {
-                action.authorization = [
-                  {
-                    actor: cpu_account, // use account that was logged in
-                    permission: cpu_access
-                  },
-                  ...action.authorization
-                ];
-                action.authorization = uniqeByKeys(action.authorization, [
-                  "actor",
-                  "permission"
-                ]);
-                return action;
-              });
-              /**
-               * Decode from block_id
-               * `ref_block_num`
-               * `ref_block_prefix
-               */
-              if (block_id) {
-                _transaction = Object.assign(_transaction, {
-                  ref_block_num: parseInt(block_id.substr(0, 8), 16) & 0xffff,
-                  ref_block_prefix: parseInt(
-                    reverseHex(block_id.substr(16, 8)),
-                    16
-                  )
+        getSmoothCPUStatus()
+          .then(
+            ({
+              status,
+              available,
+              cpu_account,
+              cpu_access,
+              cpu_public,
+              block_id
+            }) => {
+              if (status && available) {
+                _this.cosignPublicKey = cpu_public;
+                let _transaction = args[0];
+                let _actions = _transaction.actions;
+                // 检查是否自带联合签名
+                let cosignbefore = _actions.every(action => {
+                  action.authorization = uniqeByKeys(action.authorization, [
+                    "actor",
+                    "permission"
+                  ]);
+                  return action.authorization.length > 1;
                 });
+                if (cosignbefore) {
+                  // 不走代签逻辑
+                  // 通知客户端关闭代签按钮, 事后恢复
+                  setSmoothCPUStatus(false)
+                    .then(res => {})
+                    .catch(err => {})
+                    .finally(() => {
+                      eos
+                        ._transaction(...args)
+                        .then(res => {
+                          resolve(res);
+                        })
+                        .catch(err => {
+                          reject(err);
+                        })
+                        .finally(() => {
+                          setSmoothCPUStatus(true);
+                        });
+                    });
+                  return;
+                }
+                _actions.map(action => {
+                  action.authorization = [
+                    {
+                      actor: cpu_account, // use account that was logged in
+                      permission: cpu_access
+                    },
+                    ...action.authorization
+                  ];
+                  action.authorization = uniqeByKeys(action.authorization, [
+                    "actor",
+                    "permission"
+                  ]);
+                  return action;
+                });
+                /**
+                 * Decode from block_id
+                 * `ref_block_num`
+                 * `ref_block_prefix
+                 */
+                if (block_id) {
+                  _transaction = Object.assign(_transaction, {
+                    ref_block_num: parseInt(block_id.substr(0, 8), 16) & 0xffff,
+                    ref_block_prefix: parseInt(
+                      reverseHex(block_id.substr(16, 8)),
+                      16
+                    )
+                  });
+                }
+                eos
+                  ._transaction(...args)
+                  .then(res => resolve(res))
+                  .catch(err => reject(err));
+              } else {
+                eos
+                  ._transaction(...args)
+                  .then(res => resolve(res))
+                  .catch(err => reject(err));
               }
-              eos
-                ._transaction(...args)
-                .then(res => resolve(res))
-                .catch(err => reject(err));
-            } else {
+            }
+          )
+          .catch(err => {
+            // 客户端响应超时
+            if (err.message == "OPERATION_TIME_OUT") {
               eos
                 ._transaction(...args)
                 .then(res => resolve(res))
                 .catch(err => reject(err));
             }
-          }
-        );
+          });
       });
     };
 
@@ -526,60 +587,99 @@ export default class ScatterInject {
     let _this = this;
     eos.transact = function(...args) {
       return new Promise((resolve, reject) => {
-        getSmoothCPUStatus().then(
-          ({
-            status,
-            available,
-            cpu_account,
-            cpu_access,
-            cpu_public,
-            block_id
-          }) => {
-            if (status && available) {
-              // 走代签逻辑
-              _this.cosignPublicKey = cpu_public;
-              let _transaction = args[0];
-              let _actions = _transaction.actions;
-              _actions.map(action => {
-                action.authorization = [
-                  {
-                    actor: cpu_account, // use account that was logged in
-                    permission: cpu_access
-                  },
-                  ...action.authorization
-                ];
-                action.authorization = uniqeByKeys(action.authorization, [
-                  "actor",
-                  "permission"
-                ]);
-                return action;
-              });
-              /**
-               * Decode from block_id
-               * `ref_block_num`
-               * `ref_block_prefix
-               */
-              if (block_id) {
-                _transaction = Object.assign(_transaction, {
-                  ref_block_num: parseInt(block_id.substr(0, 8), 16) & 0xffff,
-                  ref_block_prefix: parseInt(
-                    reverseHex(block_id.substr(16, 8)),
-                    16
-                  )
+        getSmoothCPUStatus()
+          .then(
+            ({
+              status,
+              available,
+              cpu_account,
+              cpu_access,
+              cpu_public,
+              block_id
+            }) => {
+              if (status && available) {
+                // 走代签逻辑
+                _this.cosignPublicKey = cpu_public;
+                let _transaction = args[0];
+                let _actions = _transaction.actions;
+                // 检查是否自带联合签名
+                let cosignbefore = _actions.every(action => {
+                  action.authorization = uniqeByKeys(action.authorization, [
+                    "actor",
+                    "permission"
+                  ]);
+                  return action.authorization.length > 1;
                 });
+                if (cosignbefore) {
+                  // 不走代签逻辑
+                  // 通知客户端关闭代签按钮, 事后恢复
+                  setSmoothCPUStatus(false)
+                    .then(res => {})
+                    .catch(err => {})
+                    .finally(() => {
+                      eos
+                        ._transaction(...args)
+                        .then(res => {
+                          resolve(res);
+                        })
+                        .catch(err => {
+                          reject(err);
+                        })
+                        .finally(() => {
+                          setSmoothCPUStatus(true);
+                        });
+                    });
+                  return;
+                }
+                _actions.map(action => {
+                  action.authorization = [
+                    {
+                      actor: cpu_account, // use account that was logged in
+                      permission: cpu_access
+                    },
+                    ...action.authorization
+                  ];
+                  action.authorization = uniqeByKeys(action.authorization, [
+                    "actor",
+                    "permission"
+                  ]);
+                  return action;
+                });
+                /**
+                 * Decode from block_id
+                 * `ref_block_num`
+                 * `ref_block_prefix
+                 */
+                if (block_id) {
+                  _transaction = Object.assign(_transaction, {
+                    ref_block_num: parseInt(block_id.substr(0, 8), 16) & 0xffff,
+                    ref_block_prefix: parseInt(
+                      reverseHex(block_id.substr(16, 8)),
+                      16
+                    )
+                  });
+                }
+                eos
+                  ._transact(...args)
+                  .then(res => resolve(res))
+                  .catch(err => reject(err));
+              } else {
+                eos
+                  ._transact(...args)
+                  .then(res => resolve(res))
+                  .catch(err => reject(err));
               }
-              eos
-                ._transact(...args)
-                .then(res => resolve(res))
-                .catch(err => reject(err));
-            } else {
+            }
+          )
+          .catch(err => {
+            // 客户端响应超时
+            if (err.message == "OPERATION_TIME_OUT") {
               eos
                 ._transact(...args)
                 .then(res => resolve(res))
                 .catch(err => reject(err));
             }
-          }
-        );
+          });
       });
     };
 
