@@ -5,9 +5,11 @@
   "module": "dist/meetone-webview-inject.esm.js",
   "browser": "dist/meetone-webview-inject.iife.js",
   "dependencies": {
-    "buffer": "^5.2.1"
+    "buffer": "^5.2.1",
+    "eosjs": "git://github.com/wujunchuan/eosjs.git#maintain-16.x.x"
   },
   "devDependencies": {
+    "@rollup/plugin-json": "^4.0.0",
     "babel-core": "^6.26.3",
     "babel-plugin-external-helpers": "^6.22.0",
     "babel-preset-latest": "^6.24.1",

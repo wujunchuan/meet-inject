@@ -3,11 +3,13 @@
  * @Author: JohnTrump
  * @Date: 2019-03-28 10:38:23
  * @Last Modified by: JohnTrump
- * @Last Modified time: 2019-11-26 14:45:28
+ * @Last Modified time: 2019-12-06 16:51:17
  */
 // const Buffer = require('buffer/').Buffer  // note: the trailing slash is important!
 import { Buffer } from "buffer/";
 import MeetBridge from "../../meet-bridge/dist/meet-bridge.umd";
+import _Eos_1 from "eosjs/lib/eos";
+
 window.meetBridge = new MeetBridge();
 
 // 翻转Hex
@@ -403,7 +405,9 @@ export default class ScatterInject {
     if (eosOptions && eosOptions.rpc) {
       return this.eosGenerate_2(network, Eos, eosOptions, protocol);
     } else {
-      return this.eosGenerate_1(network, Eos, eosOptions, protocol);
+      // 将EOSjs替换为我们自己维护的版本
+      let _Eos = _Eos_1;
+      return this.eosGenerate_1(network, _Eos, eosOptions, protocol);
     }
   }
 
@@ -455,7 +459,6 @@ export default class ScatterInject {
     let httpEndpoint =
       network.protocol + "://" + network.host + ":" + network.port;
     let chainId = network.chainId;
-
     let eos = Eos(
       Object.assign(eosOptions, {
         httpEndpoint,
@@ -544,6 +547,16 @@ export default class ScatterInject {
                   .then(res => resolve(res))
                   .catch(err => reject(err));
               } else {
+                // 去重, 防止用户在页面打开后, 操作开关, 产生两个相同authorization的bug
+                let _transaction = args[0];
+                let _actions = _transaction.actions;
+                _actions.every(action => {
+                  action.authorization = uniqeByKeys(action.authorization, [
+                    "actor",
+                    "permission"
+                  ]);
+                  return action.authorization.length > 1;
+                });
                 eos
                   ._transaction(...args)
                   .then(res => resolve(res))
@@ -597,6 +610,7 @@ export default class ScatterInject {
               cpu_public,
               block_id
             }) => {
+              /* 服务可用 */
               if (status && available) {
                 // 走代签逻辑
                 _this.cosignPublicKey = cpu_public;
@@ -664,6 +678,18 @@ export default class ScatterInject {
                   .then(res => resolve(res))
                   .catch(err => reject(err));
               } else {
+                /* 服务不可用
+                 * 去重, 防止用户在页面打开后, 操作开关, 产生两个相同的authorization的BUG
+                 */
+                let _transaction = args[0];
+                let _actions = _transaction.actions;
+                _actions.every(action => {
+                  action.authorization = uniqeByKeys(action.authorization, [
+                    "actor",
+                    "permission"
+                  ]);
+                  return action.authorization.length > 1;
+                });
                 eos
                   ._transact(...args)
                   .then(res => resolve(res))
