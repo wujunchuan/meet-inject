@@ -3,7 +3,7 @@
  * @Author: JohnTrump
  * @Date: 2019-03-28 10:38:23
  * @Last Modified by: JohnTrump
- * @Last Modified time: 2019-12-06 16:51:17
+ * @Last Modified time: 2019-12-17 14:32:09
  */
 // const Buffer = require('buffer/').Buffer  // note: the trailing slash is important!
 import { Buffer } from "buffer/";
@@ -115,6 +115,7 @@ function timeoutPromise(promise, ms) {
   return Promise.race([promise, timeout]);
 }
 
+/* ScatterInject Class */
 export default class ScatterInject {
   constructor() {
     if (typeof window == "object") {
@@ -231,49 +232,57 @@ export default class ScatterInject {
   getIdentity(requiredFields) {
     var network = requiredFields && requiredFields.accounts[0];
     let blockchain = network && network.blockchain;
-    return meetBridge.invokeAccountInfo().then(res => {
-      if (res.code === 0) {
-        // 原生客户端将权限permission回传给了网页，所以这里可以不单纯的使用isOwner/isActive来设置权限了
-        // 这样可以适配更多非onwer/active权限
-        let authority = "active"; // 假定权限为active
-        let permissions = [];
-        try {
-          let hasActive = false;
-          permissions = res.data && res.data.permission.split("&&");
-          if (permissions.length === 1) {
-            authority = permissions[0];
-          } else {
-            // 判断是否有active权限
-            for (let i = 0; i < permissions.length; i++) {
-              if (permissions[i] === "active") {
-                hasActive = true;
+    /* chainId: network && network.chainId */
+    return meetBridge
+      .invokeAccountInfo({
+        // Dapp所属的chainId
+        chainId: network && network.chainId,
+        // 当前Dapp名称
+        dappName: document.title
+      })
+      .then(res => {
+        if (res.code === 0) {
+          // 原生客户端将权限permission回传给了网页，所以这里可以不单纯的使用isOwner/isActive来设置权限了
+          // 这样可以适配更多非onwer/active权限
+          let authority = "active"; // 假定权限为active
+          let permissions = [];
+          try {
+            let hasActive = false;
+            permissions = res.data && res.data.permission.split("&&");
+            if (permissions.length === 1) {
+              authority = permissions[0];
+            } else {
+              // 判断是否有active权限
+              for (let i = 0; i < permissions.length; i++) {
+                if (permissions[i] === "active") {
+                  hasActive = true;
+                }
+              }
+              // 缺少active权限，才会去默认取第一个权限
+              if (!hasActive) {
+                authority = permissions[0];
               }
             }
-            // 缺少active权限，才会去默认取第一个权限
-            if (!hasActive) {
-              authority = permissions[0];
-            }
-          }
-        } catch (error) {}
-        var scatterIdentity = {
-          accounts: [
-            {
-              authority: authority,
-              blockchain: blockchain || "eos",
-              name: res.data.account,
-              publicKey: res.data.publicKey,
-              isHardware: false
-            }
-          ],
-          publicKey: res.data.publicKey,
-          kyc: false,
-          name: "MEETONE-" + res.data.account
-        };
-        this.identity = scatterIdentity;
-        return scatterIdentity;
-      }
-      return {};
-    });
+          } catch (error) {}
+          var scatterIdentity = {
+            accounts: [
+              {
+                authority: authority,
+                blockchain: blockchain || "eos",
+                name: res.data.account,
+                publicKey: res.data.publicKey,
+                isHardware: false
+              }
+            ],
+            publicKey: res.data.publicKey,
+            kyc: false,
+            name: "MEETONE-" + res.data.account
+          };
+          this.identity = scatterIdentity;
+          return scatterIdentity;
+        }
+        return {};
+      });
   }
 
   requestTransfer(network, to, amount, tokenDetails) {
