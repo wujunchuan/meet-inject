@@ -3,7 +3,7 @@
  * @Author: JohnTrump
  * @Date: 2019-03-30 18:55:39
  * @Last Modified by: JohnTrump
- * @Last Modified time: 2019-12-17 14:34:43
+ * @Last Modified time: 2020-01-20 18:11:07
  */
 import ScatterInject from "./ScatterInject";
 
@@ -22,7 +22,6 @@ export default function main() {
       const { params, callbackId } = JSON.parse(e.data);
       const resultJSON = decodeURIComponent(atob(params));
       const result = JSON.parse(resultJSON);
-      console.info({ callbackId, result });
 
       // Will skip new Library ('meet-js-sdk') callback
       // Notice that, we will skip the callback startwith `meetjs_callback`
@@ -38,6 +37,7 @@ export default function main() {
       if (callbackId && typeof window[callbackId] === "function") {
         // @ts-ignore
         window[callbackId](result);
+        console.info({ callbackId, result });
         window[callbackId] = null;
       }
     } catch (error) {}

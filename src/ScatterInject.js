@@ -3,14 +3,15 @@
  * @Author: JohnTrump
  * @Date: 2019-03-28 10:38:23
  * @Last Modified by: JohnTrump
- * @Last Modified time: 2019-12-17 14:32:09
+ * @Last Modified time: 2020-01-20 18:16:10
  */
 // const Buffer = require('buffer/').Buffer  // note: the trailing slash is important!
 import { Buffer } from "buffer/";
 import MeetBridge from "../../meet-bridge/dist/meet-bridge.umd";
 import _Eos_1 from "eosjs/lib/eos";
 
-window.meetBridge = new MeetBridge();
+const bridge = new MeetBridge();
+window.meetBridge = bridge;
 
 // 翻转Hex
 function reverseHex(h) {
@@ -44,7 +45,7 @@ function uniqeByKeys(array, keys) {
 // 限制10s超时
 function setSmoothCPUStatus(status) {
   let cp1 = new Promise((resolve, reject) => {
-    window.meetBridge
+    bridge
       .customGenerate({
         routeName: "app/setSmoothCPUStatus",
         params: {
@@ -65,7 +66,7 @@ function setSmoothCPUStatus(status) {
 // 限制30s超时
 function getSmoothCPUStatus() {
   let cp1 = new Promise((resolve, reject) => {
-    window.meetBridge
+    bridge
       .customGenerate({
         routeName: "app/getSmoothCPUStatus"
       })
@@ -159,8 +160,8 @@ export default class ScatterInject {
   }
 
   // 登录
-  login() {
-    return this.getIdentity();
+  login(requiredFields) {
+    return this.getIdentity(requiredFields);
   }
   // 登录
   checkLogin() {
@@ -233,7 +234,7 @@ export default class ScatterInject {
     var network = requiredFields && requiredFields.accounts[0];
     let blockchain = network && network.blockchain;
     /* chainId: network && network.chainId */
-    return meetBridge
+    return bridge
       .invokeAccountInfo({
         // Dapp所属的chainId
         chainId: network && network.chainId,
@@ -303,7 +304,7 @@ export default class ScatterInject {
         this.identity.accounts[0].blockchain) ||
       "eos";
 
-    return meetBridge
+    return bridge
       .invokeTransfer({
         blockchain,
         amount: amount,
@@ -330,7 +331,7 @@ export default class ScatterInject {
       this.identity.accounts &&
       this.identity.accounts[0] &&
       this.identity.accounts[0].blockchain;
-    return meetBridge
+    return bridge
       .invokeSignature({
         publicKey: publicKey,
         data: data,
@@ -365,7 +366,7 @@ export default class ScatterInject {
       this.identity.accounts &&
       this.identity.accounts[0] &&
       this.identity.accounts[0].blockchain;
-    return meetBridge
+    return bridge
       .invokeSignature({
         publicKey: this.identity.publicKey,
         data: nonceData,
@@ -384,7 +385,7 @@ export default class ScatterInject {
   /** 签名逻辑 */
   signProvider(blockchain) {
     return function(signargs) {
-      return meetBridge
+      return bridge
         .invokeSignProvider({
           blockchain: blockchain,
           buf: Array.from(signargs.buf),
