@@ -6,7 +6,8 @@
   "browser": "dist/meetone-webview-inject.iife.js",
   "dependencies": {
     "buffer": "^5.2.1",
-    "eosjs": "git://github.com/wujunchuan/eosjs.git#maintain-16.x.x"
+    "eosjs": "git://github.com/wujunchuan/eosjs.git#maintain-16.x.x",
+    "web3": "0.20.7"
   },
   "devDependencies": {
     "@rollup/plugin-json": "^4.0.0",
