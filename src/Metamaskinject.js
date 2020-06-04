@@ -3,17 +3,47 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-06-01 18:23:29
- * @FilePath: /src/Metamaskinject.js
+ * @LastEditTime: 2020-06-04 17:29:46
+ * @FilePath: /Users/wujunchuan/Project/source/meet-inject/src/Metamaskinject.js
  */
 
 import MeetBridge from "../../meet-bridge/dist/meet-bridge.umd";
-import 'web3/dist/web3.min.js'
+import "web3/dist/web3.min.js";
 
 const bridge = new MeetBridge();
 
 export default class MetamaskInject {
   constructor() {
+    this.wallet = "MEETONE"; // 可以判断 Metamask 的注入逻辑是否来自MEETONE钱包
+    this.isMetaMask = true; // 毕竟我们是要模拟 Metamask 环境, 所以我们需要这样写
+    this.selectedAddress = ""; // 当前ETH公钥地址
+    /*
+      TODO: 目前的 networkVersion 与 chainId为写死状态, 代表主网
+      鉴于客户端当前并没有支持多个网络的ETH, 所以先写死
+     */
+    this.networkVersion = 1; // enum<number> -> '1': Ethereum Main Network
+    this.chainId = "0x1";
+
+    /** 兼容 metamask-specific convenience methods */
+    this._metamask = new Proxy(
+      {
+        isEnabled: function() {
+          return true;
+        },
+        isApproved: async function() {
+          return true;
+        },
+        isUnlocked: async function() {
+          return true;
+        },
+      },
+      {
+        get: function(obj, prop) {
+          return obj[prop];
+        },
+      }
+    );
+
     /*
         向页面注入 Metamask 补丁
      */
@@ -21,71 +51,35 @@ export default class MetamaskInject {
       window.ethereum = this;
     }
 
-    /*
-       setup web3
-     */
-    if (typeof window.web3 !== 'undefined') {
-      throw new Error(`Meetone detected another web3.
-      Meetone will not work reliably with another web3 extension.
-      This usually happens if you have two Meetones installed,
-      or Meetone and another web3 extension. Please remove one
-      and try again.`)
+    /* setup web3 */
+    if (typeof window.web3 !== "undefined") {
+      throw new Error(`MEETONE detected another web3.
+      MEETONE will not work reliably with another web3 extension.
+      This usually happens if you have two wallet installed,
+      or MEETONE and another web3 extension. Please remove one
+      and try again.`);
     }
-    const web3 = new Web3(window.ethereum)
-    web3.setProvider = function () {
-      log.debug('MetaMask - overrode web3.setProvider')
-    }
-    log.debug('MetaMask - injected web3')
 
-    Object.defineProperty(window.ethereum, '_web3Ref', {
-      enumerable: false,
-      writable: true,
-      configurable: true,
-      value: web3.eth,
-    });
+    const web3 = new Web3(window.ethereum);
 
-    /*
-        set Metamask properties
-     */
-    this.wallet = "MEETONE"; // 可以判断 Metamask 的注入逻辑是否来自MEETONE钱包
-    /** true if the user has MetaMask installed, false otherwise. */
-    this.isMetaMask = true; // 毕竟我们是要模拟 Metamask 环境, 所以我们需要这样写
-    /**
-     * Deprecated
-     *
-     * Returns a numeric string representing the current blockchain's network ID. A few example values:
-     */
-    this.networkVersion = 1; // enum<number> -> '1': Ethereum Main Network
-    /**
-     * Deprecated
-     *
-     * Returns a hex-prefixed string representing the current user's selected address, ex: "0xfdea65c8e26263f6d9a1b5de9555d2931a33b825".
-     */
-    this.selectedAddress = ""; // 当前ETH公钥地址
-    this.chainId = "0x1";
+    web3.setProvider = function() {
+      log.debug("MEETONE - overrode web3.setProvider");
+    };
   }
-
+  isConnected() {
+    return true;
+  }
   /**
    * Requests the user provides an ethereum address to be identified by. Returns a promise of an array of hex-prefixed ethereum address strings
    *
    * @return Promise<string[]> 当前钱包账号公钥
    */
   async enable() {
-    return new Promise((resolve, reject) => {
-      try {
-        const res = await bridge.customGenerate({
-          routeName: 'eth/enable'
-        });
-        if (res.code !== 0) {
-          reject(res.data)
-        } else {
-          res.code === 0 ? this.selectedAddress = res.data.accounts[0] : null;
-          resolve(res.data);
-        }
-      } catch (error) {
-        reject(error);
-      }
-    })
+    return new Promise((resolve) => {
+      this.sendAsync({ method: "eth_requestAccounts" }, (_err, res) => {
+        resolve(res.data.publicKey);
+      });
+    });
   }
 
   /**
@@ -104,41 +98,60 @@ export default class MetamaskInject {
    *
    * `ethereum.sendAsync(payload: Object, callback: Function): JsonRpcResponse`
    */
-  sendAsync(payload, callback) {
-    bridge
-      .customGenerate({
-        routeName: "eth/sendAsync",
-        /*
-        Example:
-          {
-            method: 'eth_sendTransaction',
-            params: params,
-            from: accounts[0], // Provide the user's account to use.
-          }
-       */
-        params: payload,
-      })
-      .then(callback());
-
-    new Promise(async (resolve, reject) => {
-      bridge
-        .customGenerate({
-          routeName: "eth/sendAsync",
-          /*
-          Example:
-            {
-              method: 'eth_sendTransaction',
-              params: params,
-              from: accounts[0], // Provide the user's account to use.
+  sendAsync(payload, cb) {
+    const { method, params } = payload;
+    switch (method) {
+      case "eth_requestAccounts": {
+        bridge
+          .customGenerate({
+            routeName: "eth/account_info",
+            params: {
+              // TODO: 获取Dapps名称的逻辑
+              dappName: "Dapp的名字",
+            },
+          })
+          .then((res) => {
+            if (res.code === 0) {
+              this.selectedAddress = res.data.publicKey;
+              window.web3.eth.defaultAccount = this.selectedAddress;
+              cb(null, {
+                id: undefined,
+                jsonrpc: undefined,
+                result: [res.data.publicKey],
+              });
+            } else {
+              cb({ code: 4001, message: "User denied" }, null);
             }
-         */
-          params: payload,
-        })
-        .then((res) => {
-          if (res.code === 0) {
-            resolve(res.data);
-          }
-        });
-    });
+          });
+        break;
+      }
+      /** 发送事务 */
+      case 'eth_sendTransaction': {
+        throw new Error("No implement method: " + method + " yet");
+      }
+      /** sign - personal_sign */
+      case 'personal_sign': {
+        throw new Error("No implement method: " + method + " yet");
+      }
+      /** sign recover - personal_sign */
+      case 'personal_ecRecover': {
+        throw new Error("No implement method: " + method + " yet");
+      }
+
+      default:
+        throw new Error("No implement method: " + method + " yet");
+    }
   }
+
+  _sendSync(payload) {}
+
+  send(payload, callback) {
+    // TODO:
+    throw new Error('No implement send() yet');
+  }
+
+  /** 手机客户端没有在Dapps中 切换账号与切换网络的需求, 所以这个方法不予实现 */
+  autoRefreshOnNetworkChange() {}
+  /** 手机客户端没有在Dapps中 切换账号与切换网络的需求, 所以这个方法不予实现 */
+  on() {}
 }
