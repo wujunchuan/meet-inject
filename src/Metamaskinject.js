@@ -3,13 +3,13 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-06-04 19:07:27
+ * @LastEditTime: 2020-06-05 20:00:51
  * @FilePath: /Users/wujunchuan/Project/source/meet-inject/src/Metamaskinject.js
  */
 
 // import "web3/dist/web3.min.js";
 // require("web3/dist/web3.min.js");
-var Web3 = require('web3');
+var Web3 = require("web3");
 
 export default class MetamaskInject {
   constructor(bridge) {
@@ -101,6 +101,8 @@ export default class MetamaskInject {
    */
   sendAsync(payload, cb) {
     const { method, params } = payload;
+    // console.log('========拦截到的Metamask协议[sendAsync]=========');
+    // console.log(payload);
     switch (method) {
       case "eth_requestAccounts": {
         this.bridge
@@ -112,13 +114,15 @@ export default class MetamaskInject {
             },
           })
           .then((res) => {
-            if (res.code === 0) {
-              this.selectedAddress = res.data.address || res.data.publicKey;
-              window.web3.eth.defaultAccount = this.selectedAddress;
+            if (res.code == 0) {
+              let pbk = res.data.address || res.data.publicKey;
+              pbk = pbk.toLowerCase();
+              this.selectedAddress = pbk;
+              window.web3.eth.defaultAccount = pbk;
               cb(null, {
-                id: undefined,
-                jsonrpc: undefined,
-                result: [res.data.address || res.data.publicKey],
+                id: payload.id,
+                jsonrpc: payload.jsonrpc,
+                result: [pbk],
               });
             } else {
               cb({ code: 4001, message: "User denied" }, null);
@@ -128,15 +132,117 @@ export default class MetamaskInject {
       }
       /** 发送事务 */
       case "eth_sendTransaction": {
-        throw new Error("No implement method: " + method + " yet");
+        this.bridge
+          .customGenerate({
+            routeName: "eth/transaction_send",
+            params: params[0],
+          })
+          .then((res) => {
+            if (res.code == 0) {
+              cb(null, {
+                id: payload.id,
+                jsonrpc: payload.jsonrpc,
+                result: res.result,
+              });
+            } else {
+              cb({ code: 4001, message: "User denied" }, null);
+            }
+          });
+        break;
+      }
+      // https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_sign
+      case "eth_sign": {
+        const [from, message] = params;
+        // cb(null, {
+        //   id: payload.id,
+        //   jsonrpc: payload.jsonrpc,
+        //   result:
+        //     "0xaa85078d9420b2ac275a71121f17e8cded803fca89af0725460f4bfa525eaa536a89c5f60e44635d2579442dbd56a960dc94717acb4c0c73f6a980de5ba4a2e01c",
+        // });
+        // return;
+        this.bridge
+          .customGenerate({
+            routeName: "eth/eth_sign",
+            params: {
+              from,
+              message,
+            },
+          })
+          .then((res) => {
+            if (res.code == 0) {
+              cb(null, {
+                id: payload.id,
+                jsonrpc: payload.jsonrpc,
+                result: res.data,
+              });
+            } else {
+              cb({ code: 4001, message: "User denied" }, null);
+            }
+          });
+        break;
       }
       /** sign - personal_sign */
       case "personal_sign": {
-        throw new Error("No implement method: " + method + " yet");
+        const [msg, from] = params;
+        // cb(null, {
+        //   id: payload.id,
+        //   jsonrpc: payload.jsonrpc,
+        //   result:
+        //     "0x4d4378882bf3b591dde496190365dce23962403ec7ff20cf7d49c5e12fdeaa5f2c842c2df53a9d75d177898042b06310dd62542f24042da168e65e701eb8c9521c",
+        // });
+        // return;
+        this.bridge
+          .customGenerate({
+            routeName: "eth/personal_sign",
+            params: {
+              msg,
+              from,
+            },
+          })
+          .then((res) => {
+            if (res.code == 0) {
+              cb(null, {
+                id: payload.id,
+                jsonrpc: payload.jsonrpc,
+                result: res.data,
+              });
+            } else {
+              cb({ code: 4001, message: "User denied" }, null);
+            }
+          });
+        break;
       }
       /** sign recover - personal_sign */
       case "personal_ecRecover": {
-        throw new Error("No implement method: " + method + " yet");
+        const [text, sign] = params;
+        // cb(null, {
+        //   id: payload.id,
+        //   jsonrpc: payload.jsonrpc,
+        //   result: "0x49a8246758f8d28e348318183d9498496074ca71",
+        // });
+        // return;
+        this.bridge
+          .customGenerate({
+            routeName: "eth/personal_ecRecover",
+            params: {
+              text,
+              sign,
+            },
+          })
+          .then((res) => {
+            if (res.code == 0) {
+              // success
+              cb(null, {
+                id: payload.id,
+                jsonrpc: payload.jsonrpc,
+                result: res.data,
+              });
+            } else {
+              // failed
+              cb({ code: 4001, message: "User denied" }, null);
+            }
+          });
+        break;
       }
 
       default:
@@ -144,11 +250,43 @@ export default class MetamaskInject {
     }
   }
 
-  _sendSync(payload) {}
+  _sendSync(payload) {
+    let selectedAddress = this.selectedAddress;
+    let result = null;
+    switch (payload.method) {
+      case "eth_accounts": {
+        result = selectedAddress ? [selectedAddress] : [];
+        break;
+      }
+      case "eth_coinbase": {
+        result = selectedAddress || null;
+        break;
+      }
+      case "eth_uninstallFilter": {
+        result = true;
+        break;
+      }
+      case "net_version": {
+        result = this.networkVersion || null;
+        break;
+      }
+    }
+
+    return {
+      id: payload.id,
+      jsonrpc: payload.jsonrpc,
+      result: result,
+    };
+  }
 
   send(payload, callback) {
-    // TODO:
-    throw new Error("No implement send() yet");
+    // console.log('========拦截到的Metamask协议[send]=========');
+    // console.log(payload);
+    if (callback) {
+      this.sendAsync(payload, callback);
+    } else {
+      return this._sendSync(payload);
+    }
   }
 
   /** 手机客户端没有在Dapps中 切换账号与切换网络的需求, 所以这个方法不予实现 */
