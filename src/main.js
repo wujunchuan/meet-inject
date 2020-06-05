@@ -5,15 +5,26 @@
  * @Last Modified by: JohnTrump
  * @Last Modified time: 2020-01-20 18:11:07
  */
+// 因为使用了async await 语法, rollup打包有这个问题
+// ref: https://github.com/rollup/rollup-plugin-babel/issues/209
+import 'regenerator-runtime/runtime'
+
 import ScatterInject from "./ScatterInject";
+import Metamaskinject from "./Metamaskinject";
+
+import MeetBridge from "../../meet-bridge/dist/meet-bridge.umd";
+window.meetBridge = bridge;
+const bridge = new MeetBridge();
 
 export default function main() {
   // 先初始化MEETONE协议桥
-  new ScatterInject();
-  // setTimeout(() => {
-  //   // 测试代码
-  //   new ScatterInject();
-  // }, 100);
+  // new ScatterInject(bridge);
+  // new Metamaskinject(bridge);
+  setTimeout(() => {
+    // 测试代码
+    new ScatterInject(bridge);
+    new Metamaskinject(bridge);
+  }, 100);
 
   // 超时时间设定, 因为不能比较好的兼容旧版本,只能在新版本发包前,往已有的JS中注入全局变量 `isSupportMeetoneSdk`来兼容
   window.document.addEventListener("message", e => {

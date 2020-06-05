@@ -3,17 +3,17 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-06-04 17:29:46
+ * @LastEditTime: 2020-06-04 19:07:27
  * @FilePath: /Users/wujunchuan/Project/source/meet-inject/src/Metamaskinject.js
  */
 
-import MeetBridge from "../../meet-bridge/dist/meet-bridge.umd";
-import "web3/dist/web3.min.js";
-
-const bridge = new MeetBridge();
+// import "web3/dist/web3.min.js";
+// require("web3/dist/web3.min.js");
+var Web3 = require('web3');
 
 export default class MetamaskInject {
-  constructor() {
+  constructor(bridge) {
+    this.bridge = bridge;
     this.wallet = "MEETONE"; // 可以判断 Metamask 的注入逻辑是否来自MEETONE钱包
     this.isMetaMask = true; // 毕竟我们是要模拟 Metamask 环境, 所以我们需要这样写
     this.selectedAddress = ""; // 当前ETH公钥地址
@@ -53,14 +53,15 @@ export default class MetamaskInject {
 
     /* setup web3 */
     if (typeof window.web3 !== "undefined") {
-      throw new Error(`MEETONE detected another web3.
-      MEETONE will not work reliably with another web3 extension.
-      This usually happens if you have two wallet installed,
-      or MEETONE and another web3 extension. Please remove one
-      and try again.`);
+      // throw new Error(`MEETONE detected another web3.
+      // MEETONE will not work reliably with another web3 extension.
+      // This usually happens if you have two wallet installed,
+      // or MEETONE and another web3 extension. Please remove one
+      // and try again.`);
     }
 
     const web3 = new Web3(window.ethereum);
+    window.web3 = web3;
 
     web3.setProvider = function() {
       log.debug("MEETONE - overrode web3.setProvider");
@@ -77,7 +78,7 @@ export default class MetamaskInject {
   async enable() {
     return new Promise((resolve) => {
       this.sendAsync({ method: "eth_requestAccounts" }, (_err, res) => {
-        resolve(res.data.publicKey);
+        resolve(res.result);
       });
     });
   }
@@ -102,7 +103,7 @@ export default class MetamaskInject {
     const { method, params } = payload;
     switch (method) {
       case "eth_requestAccounts": {
-        bridge
+        this.bridge
           .customGenerate({
             routeName: "eth/account_info",
             params: {
@@ -112,12 +113,12 @@ export default class MetamaskInject {
           })
           .then((res) => {
             if (res.code === 0) {
-              this.selectedAddress = res.data.publicKey;
+              this.selectedAddress = res.data.address || res.data.publicKey;
               window.web3.eth.defaultAccount = this.selectedAddress;
               cb(null, {
                 id: undefined,
                 jsonrpc: undefined,
-                result: [res.data.publicKey],
+                result: [res.data.address || res.data.publicKey],
               });
             } else {
               cb({ code: 4001, message: "User denied" }, null);
@@ -126,15 +127,15 @@ export default class MetamaskInject {
         break;
       }
       /** 发送事务 */
-      case 'eth_sendTransaction': {
+      case "eth_sendTransaction": {
         throw new Error("No implement method: " + method + " yet");
       }
       /** sign - personal_sign */
-      case 'personal_sign': {
+      case "personal_sign": {
         throw new Error("No implement method: " + method + " yet");
       }
       /** sign recover - personal_sign */
-      case 'personal_ecRecover': {
+      case "personal_ecRecover": {
         throw new Error("No implement method: " + method + " yet");
       }
 
@@ -147,7 +148,7 @@ export default class MetamaskInject {
 
   send(payload, callback) {
     // TODO:
-    throw new Error('No implement send() yet');
+    throw new Error("No implement send() yet");
   }
 
   /** 手机客户端没有在Dapps中 切换账号与切换网络的需求, 所以这个方法不予实现 */
