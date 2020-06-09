@@ -3,7 +3,7 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-06-05 20:00:51
+ * @LastEditTime: 2020-06-09 15:27:59
  * @FilePath: /Users/wujunchuan/Project/source/meet-inject/src/Metamaskinject.js
  */
 
@@ -101,7 +101,7 @@ export default class MetamaskInject {
    */
   sendAsync(payload, cb) {
     const { method, params } = payload;
-    // console.log('========拦截到的Metamask协议[sendAsync]=========');
+    console.log('Receive Async Message: ' + method);
     // console.log(payload);
     switch (method) {
       case "eth_requestAccounts": {
@@ -115,6 +115,7 @@ export default class MetamaskInject {
           })
           .then((res) => {
             if (res.code == 0) {
+              // TODO: address 是之前iOS客户端写的字段, 之后统一成了publicKey了
               let pbk = res.data.address || res.data.publicKey;
               pbk = pbk.toLowerCase();
               this.selectedAddress = pbk;
@@ -142,7 +143,7 @@ export default class MetamaskInject {
               cb(null, {
                 id: payload.id,
                 jsonrpc: payload.jsonrpc,
-                result: res.result,
+                result: res.data.txid,
               });
             } else {
               cb({ code: 4001, message: "User denied" }, null);
@@ -153,6 +154,7 @@ export default class MetamaskInject {
       // https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_sign
       case "eth_sign": {
         const [from, message] = params;
+        /* mock data */
         // cb(null, {
         //   id: payload.id,
         //   jsonrpc: payload.jsonrpc,
@@ -173,7 +175,7 @@ export default class MetamaskInject {
               cb(null, {
                 id: payload.id,
                 jsonrpc: payload.jsonrpc,
-                result: res.data,
+                result: res.data.sig,
               });
             } else {
               cb({ code: 4001, message: "User denied" }, null);
@@ -204,7 +206,7 @@ export default class MetamaskInject {
               cb(null, {
                 id: payload.id,
                 jsonrpc: payload.jsonrpc,
-                result: res.data,
+                result: res.data.sig,
               });
             } else {
               cb({ code: 4001, message: "User denied" }, null);
@@ -214,7 +216,10 @@ export default class MetamaskInject {
       }
       /** sign recover - personal_sign */
       case "personal_ecRecover": {
-        const [text, sign] = params;
+        let [text, sign] = params;
+        // NOTE: eth.personal_ecRecover的参数中字符串前面加上了 `0x0`
+        text = text.startsWith('0x0') ? text.slice(3) : text;
+        /* mock data */
         // cb(null, {
         //   id: payload.id,
         //   jsonrpc: payload.jsonrpc,
@@ -235,7 +240,7 @@ export default class MetamaskInject {
               cb(null, {
                 id: payload.id,
                 jsonrpc: payload.jsonrpc,
-                result: res.data,
+                result: res.data.pub,
               });
             } else {
               // failed
@@ -282,9 +287,12 @@ export default class MetamaskInject {
   send(payload, callback) {
     // console.log('========拦截到的Metamask协议[send]=========');
     // console.log(payload);
+
+    /* 如果这里有指定回调函数的参数, 意味着这是个异步操作, 走 `sendAsync` 的逻辑 */
     if (callback) {
       this.sendAsync(payload, callback);
     } else {
+      /* 如果没有回调函数的参数, 则意味着这是个同步操作, 执行 `_sendSync` 的逻辑 */
       return this._sendSync(payload);
     }
   }
