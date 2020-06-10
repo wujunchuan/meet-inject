@@ -3,7 +3,7 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-06-09 15:27:59
+ * @LastEditTime: 2020-06-10 11:24:02
  * @FilePath: /Users/wujunchuan/Project/source/meet-inject/src/Metamaskinject.js
  */
 
@@ -101,7 +101,7 @@ export default class MetamaskInject {
    */
   sendAsync(payload, cb) {
     const { method, params } = payload;
-    console.log('Receive Async Message: ' + method);
+    console.log("Receive Async Message: " + method);
     // console.log(payload);
     switch (method) {
       case "eth_requestAccounts": {
@@ -131,12 +131,31 @@ export default class MetamaskInject {
           });
         break;
       }
-      /** 发送事务 */
+      /** 签事务 */
       case "eth_sendTransaction": {
+        // ref: https://docs.metamask.io/guide/sending-transactions.html#transaction-parameters
+        let {
+          // nonce = "0x00", // Nonce [ignored]
+          gasPrice = "0x6fc23ac00",
+          gas = "0x9c40",
+          to, // string
+          from = this.selectedAddress, // string, default is current address
+          value = '0x00', // string,
+          data = '0x00', // string
+          // chainId = this.chainId
+        } = params[0];
+
         this.bridge
           .customGenerate({
             routeName: "eth/transaction_send",
-            params: params[0],
+            params: {
+              from,
+              to,
+              gasPrice,
+              gas,
+              value,
+              data
+            },
           })
           .then((res) => {
             if (res.code == 0) {
@@ -218,7 +237,7 @@ export default class MetamaskInject {
       case "personal_ecRecover": {
         let [text, sign] = params;
         // NOTE: eth.personal_ecRecover的参数中字符串前面加上了 `0x0`
-        text = text.startsWith('0x0') ? text.slice(3) : text;
+        text = text.startsWith("0x0") ? text.slice(3) : text;
         /* mock data */
         // cb(null, {
         //   id: payload.id,
