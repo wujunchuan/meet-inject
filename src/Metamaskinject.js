@@ -3,13 +3,36 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-06-10 11:24:02
+ * @LastEditTime: 2020-06-10 12:02:06
  * @FilePath: /Users/wujunchuan/Project/source/meet-inject/src/Metamaskinject.js
  */
 
 // import "web3/dist/web3.min.js";
 // require("web3/dist/web3.min.js");
 var Web3 = require("web3");
+/**
+ * Extracts a name for the site from the DOM
+ * 获取Dapps名称
+ */
+function getSiteName (window) {
+  const { document } = window
+
+  const siteName = document.querySelector('head > meta[property="og:site_name"]')
+  if (siteName) {
+    return siteName.content
+  }
+
+  const metaTitle = document.querySelector('head > meta[name="title"]')
+  if (metaTitle) {
+    return metaTitle.content
+  }
+
+  if (document.title && document.title.length > 0) {
+    return document.title
+  }
+
+  return window.location.hostname
+}
 
 export default class MetamaskInject {
   constructor(bridge) {
@@ -17,6 +40,10 @@ export default class MetamaskInject {
     this.wallet = "MEETONE"; // 可以判断 Metamask 的注入逻辑是否来自MEETONE钱包
     this.isMetaMask = true; // 毕竟我们是要模拟 Metamask 环境, 所以我们需要这样写
     this.selectedAddress = ""; // 当前ETH公钥地址
+    this.siteMetadata = {
+      name: getSiteName(window), //Dapps名称
+      icon: '' // icon, 获取方法待定
+    }
     /*
       TODO: 目前的 networkVersion 与 chainId为写死状态, 代表主网
       鉴于客户端当前并没有支持多个网络的ETH, 所以先写死
@@ -109,8 +136,7 @@ export default class MetamaskInject {
           .customGenerate({
             routeName: "eth/account_info",
             params: {
-              // TODO: 获取Dapps名称的逻辑
-              dappName: "Dapp的名字",
+              dappName: this.siteMetadata.name,
             },
           })
           .then((res) => {
