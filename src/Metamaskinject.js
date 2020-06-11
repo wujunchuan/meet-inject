@@ -3,13 +3,12 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-06-10 12:02:06
+ * @LastEditTime: 2020-06-11 11:41:55
  * @FilePath: /Users/wujunchuan/Project/source/meet-inject/src/Metamaskinject.js
  */
 
-// import "web3/dist/web3.min.js";
-// require("web3/dist/web3.min.js");
-var Web3 = require("web3");
+// 测试请打开
+// const Web3 = require("web3");
 /**
  * Extracts a name for the site from the DOM
  * 获取Dapps名称
