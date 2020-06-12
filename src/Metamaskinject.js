@@ -3,7 +3,7 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-06-11 11:41:55
+ * @LastEditTime: 2020-06-12 19:47:25
  * @FilePath: /Users/wujunchuan/Project/source/meet-inject/src/Metamaskinject.js
  */
 
@@ -13,24 +13,26 @@
  * Extracts a name for the site from the DOM
  * 获取Dapps名称
  */
-function getSiteName (window) {
-  const { document } = window
+function getSiteName(window) {
+  const { document } = window;
 
-  const siteName = document.querySelector('head > meta[property="og:site_name"]')
+  const siteName = document.querySelector(
+    'head > meta[property="og:site_name"]'
+  );
   if (siteName) {
-    return siteName.content
+    return siteName.content;
   }
 
-  const metaTitle = document.querySelector('head > meta[name="title"]')
+  const metaTitle = document.querySelector('head > meta[name="title"]');
   if (metaTitle) {
-    return metaTitle.content
+    return metaTitle.content;
   }
 
   if (document.title && document.title.length > 0) {
-    return document.title
+    return document.title;
   }
 
-  return window.location.hostname
+  return window.location.hostname;
 }
 
 export default class MetamaskInject {
@@ -41,8 +43,8 @@ export default class MetamaskInject {
     this.selectedAddress = ""; // 当前ETH公钥地址
     this.siteMetadata = {
       name: getSiteName(window), //Dapps名称
-      icon: '' // icon, 获取方法待定
-    }
+      icon: "", // icon, 获取方法待定
+    };
     /*
       TODO: 目前的 networkVersion 与 chainId为写死状态, 代表主网
       鉴于客户端当前并没有支持多个网络的ETH, 所以先写死
@@ -75,15 +77,6 @@ export default class MetamaskInject {
      */
     if (typeof window == "object") {
       window.ethereum = this;
-    }
-
-    /* setup web3 */
-    if (typeof window.web3 !== "undefined") {
-      // throw new Error(`MEETONE detected another web3.
-      // MEETONE will not work reliably with another web3 extension.
-      // This usually happens if you have two wallet installed,
-      // or MEETONE and another web3 extension. Please remove one
-      // and try again.`);
     }
 
     const web3 = new Web3(window.ethereum);
@@ -127,10 +120,23 @@ export default class MetamaskInject {
    */
   sendAsync(payload, cb) {
     const { method, params } = payload;
-    console.log("Receive Async Message: " + method);
-    // console.log(payload);
+    console.info("Receive Async Message: ");
+    console.info(payload);
+    // console.info(payload);
     switch (method) {
+      case "eth_accounts":
       case "eth_requestAccounts": {
+        // 如果本地已经有 selectedAddress 状态, 则不再发起协议去获取账号
+        if (this.selectedAddress) {
+          cb(null, {
+            id: undefined,
+            jsonrpc: undefined,
+            // id: payload.id,
+            // jsonrpc: payload.jsonrpc,
+            result: [this.selectedAddress],
+          });
+          return;
+        }
         this.bridge
           .customGenerate({
             routeName: "eth/account_info",
@@ -165,8 +171,8 @@ export default class MetamaskInject {
           gas = "0x9c40",
           to, // string
           from = this.selectedAddress, // string, default is current address
-          value = '0x00', // string,
-          data = '0x00', // string
+          value = "0x00", // string,
+          data = "0x00", // string
           // chainId = this.chainId
         } = params[0];
 
@@ -179,7 +185,7 @@ export default class MetamaskInject {
               gasPrice,
               gas,
               value,
-              data
+              data,
             },
           })
           .then((res) => {
@@ -295,11 +301,14 @@ export default class MetamaskInject {
       }
 
       default:
-        throw new Error("No implement method: " + method + " yet");
+        console.warn("No implement method: " + method + " yet");
+      // 此处不能抛出异常, 否则Dapps会崩溃
+      // throw new Error("No implement method: " + method + " yet");
     }
   }
 
   _sendSync(payload) {
+    console.info("Receive Sync Message: " + payload.method);
     let selectedAddress = this.selectedAddress;
     let result = null;
     switch (payload.method) {
@@ -329,8 +338,8 @@ export default class MetamaskInject {
   }
 
   send(payload, callback) {
-    // console.log('========拦截到的Metamask协议[send]=========');
-    // console.log(payload);
+    console.info('========拦截到的Metamask协议[send]=========');
+    console.info(payload);
 
     /* 如果这里有指定回调函数的参数, 意味着这是个异步操作, 走 `sendAsync` 的逻辑 */
     if (callback) {
