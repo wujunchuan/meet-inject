@@ -3,7 +3,7 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-06-15 16:13:46
+ * @LastEditTime: 2020-06-15 18:33:45
  * @FilePath: /src/Metamaskinject.js
  */
 
@@ -168,8 +168,8 @@ export default class MetamaskInject {
         // ref: https://docs.metamask.io/guide/sending-transactions.html#transaction-parameters
         let {
           // nonce = "0x00", // Nonce [ignored]
-          gasPrice = "0x6fc23ac00",
-          gas = "0x9c40",
+          gasPrice,
+          gas,
           to, // string
           from = this.selectedAddress, // string, default is current address
           value = "0x00", // string,
