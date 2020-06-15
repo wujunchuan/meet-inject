@@ -1049,9 +1049,9 @@ md5.js@^1.3.4:
     safe-buffer "^5.1.2"
 
 meet-bridge@^2.1.2:
-  version "2.1.2"
-  resolved "https://registry.npmjs.org/meet-bridge/-/meet-bridge-2.1.2.tgz#c38e3a086971ef5cc7e356fd84e11b1517775e1e"
-  integrity sha512-TaDiyF64XjLjbZTJ0FnecyFWeNGMFlkJtZw3oL7+W67Y+tuhTuQx3H/ZU5a4PDLNZlz6JH7Uk0fBft2nT2eOzg==
+  version "2.2.0"
+  resolved "https://registry.npmjs.org/meet-bridge/-/meet-bridge-2.2.0.tgz#9e6d1126a1545afcbf8283e7da3c2b51096e7a26"
+  integrity sha512-ko9WQ2K6S/IpVOAh+jgHdM8RM/hWlxqB09m+hqE4pQkMgxHZngA2kxIVS5bxCYcjKlsKTOfQycpDEu1vjTdUzA==
 
 merge-stream@^2.0.0:
   version "2.0.0"
