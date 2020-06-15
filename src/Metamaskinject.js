@@ -3,8 +3,8 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-06-12 19:47:25
- * @FilePath: /Users/wujunchuan/Project/source/meet-inject/src/Metamaskinject.js
+ * @LastEditTime: 2020-06-15 16:13:46
+ * @FilePath: /src/Metamaskinject.js
  */
 
 // 测试请打开
@@ -58,11 +58,11 @@ export default class MetamaskInject {
         isEnabled: function() {
           return true;
         },
-        isApproved: async function() {
-          return true;
+        isApproved: function() {
+          return Promise.resolve(true);
         },
-        isUnlocked: async function() {
-          return true;
+        isUnlocked: function() {
+          return Promise.resolve(true);
         },
       },
       {
@@ -81,6 +81,7 @@ export default class MetamaskInject {
 
     const web3 = new Web3(window.ethereum);
     window.web3 = web3;
+    console.log('注入成功', window.web3)
 
     web3.setProvider = function() {
       log.debug("MEETONE - overrode web3.setProvider");

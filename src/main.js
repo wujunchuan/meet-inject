@@ -12,7 +12,7 @@ import 'regenerator-runtime/runtime'
 import ScatterInject from "./ScatterInject";
 import Metamaskinject from "./Metamaskinject";
 
-import MeetBridge from "../../meet-bridge/dist/meet-bridge.umd";
+import MeetBridge from "meet-bridge";
 
 const bridge = new MeetBridge();
 window.meetBridge = bridge;
@@ -26,14 +26,23 @@ export default function main() {
   } catch (error) {
     console.log(error);
   }
-
-  try {
-    setTimeout(() => {
-      new Metamaskinject(bridge);
-    }, 500);
-  } catch (e) {
-    console.log(e);
+  let tryTimes = 0;
+  function tryInitMetamaskInject() {
+    if (tryTimes >= 100) return;
+    if (typeof window.Web3 === 'function') {
+      try {
+        new Metamaskinject(bridge);
+      } catch (err) {
+        console.log(err);
+      }
+    } else {
+      tryTimes++;
+      setTimeout(() => {
+        tryInitMetamaskInject();
+      }, 100);
+    }
   }
+  tryInitMetamaskInject();
 
   // 超时时间设定, 因为不能比较好的兼容旧版本,只能在新版本发包前,往已有的JS中注入全局变量 `isSupportMeetoneSdk`来兼容
   window.document.addEventListener("message", e => {

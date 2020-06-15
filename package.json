@@ -7,6 +7,7 @@
   "dependencies": {
     "buffer": "^5.2.1",
     "eosjs": "git://github.com/wujunchuan/eosjs.git#maintain-16.x.x",
+    "meet-bridge": "^2.1.2",
     "rollup-plugin-json": "^4.0.0",
     "web3": "0.20.7"
   },
