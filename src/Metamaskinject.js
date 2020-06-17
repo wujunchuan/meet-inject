@@ -3,7 +3,7 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-06-17 11:27:11
+ * @LastEditTime: 2020-06-17 11:37:12
  * @FilePath: /src/Metamaskinject.js
  */
 
@@ -200,6 +200,45 @@ export default class MetamaskInject {
           });
         break;
       }
+
+      /** Executes a new message call immediately without creating a transaction on the block chain. */
+      case 'eth_call': {
+        let {
+          // nonce = "0x00", // Nonce [ignored]
+          gasPrice,
+          gas,
+          to, // string
+          from = this.selectedAddress, // string, default is current address
+          value = "0x00", // string,
+          data = "0x00", // string
+          // chainId = this.chainId
+        } = params[0];
+        this.bridge
+          .customGenerate({
+            routeName: "eth/eth_call",
+            params: {
+              from,
+              to,
+              gasPrice,
+              gas,
+              value,
+              data,
+            },
+          })
+          .then((res) => {
+            if (res.code == 0) {
+              cb(null, {
+                id: payload.id,
+                jsonrpc: payload.jsonrpc,
+                result: res.data.txid || "0x",
+              });
+            } else {
+              cb({ code: 4001, message: "User denied" }, null);
+            }
+          });
+        break;
+      }
+
       // https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_sign
       case "eth_sign": {
         const [from, message] = params;
