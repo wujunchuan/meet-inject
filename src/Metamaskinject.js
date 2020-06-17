@@ -3,7 +3,7 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-06-17 11:37:12
+ * @LastEditTime: 2020-06-17 14:06:05
  * @FilePath: /src/Metamaskinject.js
  */
 
@@ -125,6 +125,30 @@ export default class MetamaskInject {
     console.info(payload);
     // console.info(payload);
     switch (method) {
+      case "eth_coinbase": {
+        cb(null, {
+          id: payload.id,
+          jsonrpc: payload.jsonrpc,
+          result: this.selectedAddress
+        })
+        break;
+      }
+      case "eth_uninstallFilter": {
+        cb(null, {
+          id: payload.id,
+          jsonrpc: payload.jsonrpc,
+          result: true,
+        });
+        break;
+      }
+      case "net_version": {
+        cb(null, {
+          id: payload.id,
+          jsonrpc: payload.jsonrpc,
+          result: this.networkVersion || null,
+        });
+        break;
+      }
       case "eth_accounts":
       case "eth_requestAccounts": {
         // 如果本地已经有 selectedAddress 状态, 则不再发起协议去获取账号
