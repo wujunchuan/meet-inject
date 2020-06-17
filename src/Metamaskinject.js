@@ -3,7 +3,7 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-06-15 18:33:45
+ * @LastEditTime: 2020-06-17 11:27:11
  * @FilePath: /src/Metamaskinject.js
  */
 
@@ -130,10 +130,8 @@ export default class MetamaskInject {
         // 如果本地已经有 selectedAddress 状态, 则不再发起协议去获取账号
         if (this.selectedAddress) {
           cb(null, {
-            id: undefined,
-            jsonrpc: undefined,
-            // id: payload.id,
-            // jsonrpc: payload.jsonrpc,
+            id: payload.id,
+            jsonrpc: payload.jsonrpc,
             result: [this.selectedAddress],
           });
           return;
@@ -147,8 +145,8 @@ export default class MetamaskInject {
           })
           .then((res) => {
             if (res.code == 0) {
-              // TODO: address 是之前iOS客户端写的字段, 之后统一成了publicKey了
-              let pbk = res.data.address || res.data.publicKey;
+              // address 是之前iOS客户端写的字段, 之后统一成了publicKey了
+              let pbk = res.data.publicKey;
               pbk = pbk.toLowerCase();
               this.selectedAddress = pbk;
               window.web3.eth.defaultAccount = pbk;
