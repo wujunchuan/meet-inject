@@ -7,11 +7,7 @@
  */
 // const Buffer = require('buffer/').Buffer  // note: the trailing slash is important!
 import { Buffer } from "buffer/";
-import MeetBridge from "../../meet-bridge/dist/meet-bridge.umd";
 import _Eos_1 from "eosjs/lib/eos";
-
-const bridge = new MeetBridge();
-window.meetBridge = bridge;
 
 // 翻转Hex
 function reverseHex(h) {
@@ -45,7 +41,7 @@ function uniqeByKeys(array, keys) {
 // 限制10s超时
 function setSmoothCPUStatus(status) {
   let cp1 = new Promise((resolve, reject) => {
-    bridge
+    window.meetBridge
       .customGenerate({
         routeName: "app/setSmoothCPUStatus",
         params: {
@@ -66,7 +62,7 @@ function setSmoothCPUStatus(status) {
 // 限制30s超时
 function getSmoothCPUStatus() {
   let cp1 = new Promise((resolve, reject) => {
-    bridge
+    window.meetBridge
       .customGenerate({
         routeName: "app/getSmoothCPUStatus"
       })
@@ -118,7 +114,8 @@ function timeoutPromise(promise, ms) {
 
 /* ScatterInject Class */
 export default class ScatterInject {
-  constructor() {
+  constructor(bridge) {
+    this.bridge = bridge;
     if (typeof window == "object") {
       // 向页面注入Scatter补丁
       window.scatter = this;
@@ -234,7 +231,7 @@ export default class ScatterInject {
     var network = requiredFields && requiredFields.accounts[0];
     let blockchain = network && network.blockchain;
     /* chainId: network && network.chainId */
-    return bridge
+    return this.bridge
       .invokeAccountInfo({
         // Dapp所属的chainId
         chainId: network && network.chainId,
@@ -304,7 +301,7 @@ export default class ScatterInject {
         this.identity.accounts[0].blockchain) ||
       "eos";
 
-    return bridge
+    return this.bridge
       .invokeTransfer({
         blockchain,
         amount: amount,
@@ -331,7 +328,7 @@ export default class ScatterInject {
       this.identity.accounts &&
       this.identity.accounts[0] &&
       this.identity.accounts[0].blockchain;
-    return bridge
+    return this.bridge
       .invokeSignature({
         publicKey: publicKey,
         data: data,
@@ -366,7 +363,7 @@ export default class ScatterInject {
       this.identity.accounts &&
       this.identity.accounts[0] &&
       this.identity.accounts[0].blockchain;
-    return bridge
+    return this.bridge
       .invokeSignature({
         publicKey: this.identity.publicKey,
         data: nonceData,
@@ -384,8 +381,10 @@ export default class ScatterInject {
 
   /** 签名逻辑 */
   signProvider(blockchain) {
+    var _this = this;
     return function(signargs) {
-      return bridge
+      // 因为加了一层this, 在这里this指向不再是 `Scatterinject`类 所以在外层绑定this
+      return _this.bridge
         .invokeSignProvider({
           blockchain: blockchain,
           buf: Array.from(signargs.buf),

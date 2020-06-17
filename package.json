@@ -1,12 +1,15 @@
 {
   "name": "meet-inject",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "main": "dist/meetone-webview-inject.cjs.js",
   "module": "dist/meetone-webview-inject.esm.js",
   "browser": "dist/meetone-webview-inject.iife.js",
   "dependencies": {
     "buffer": "^5.2.1",
-    "eosjs": "git://github.com/wujunchuan/eosjs.git#maintain-16.x.x"
+    "eosjs": "git://github.com/wujunchuan/eosjs.git#maintain-16.x.x",
+    "meet-bridge": "^2.1.2",
+    "rollup-plugin-json": "^4.0.0",
+    "web3": "0.20.7"
   },
   "devDependencies": {
     "@rollup/plugin-json": "^4.0.0",
@@ -21,7 +24,7 @@
   },
   "scripts": {
     "build": "NODE_ENV=production rollup -c",
-    "prebuild": "NODE_ENV=development rollup -c",
+    "pre_build": "NODE_ENV=development rollup -c",
     "dev": "rollup -c -w",
     "test": "node test/test.js"
   },
