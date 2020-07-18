@@ -3,7 +3,7 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-06-17 14:06:05
+ * @LastEditTime: 2020-07-18 14:13:52
  * @FilePath: /src/Metamaskinject.js
  */
 
@@ -81,7 +81,7 @@ export default class MetamaskInject {
 
     const web3 = new Web3(window.ethereum);
     window.web3 = web3;
-    console.log('注入成功', window.web3)
+    console.log("注入成功", window.web3);
 
     web3.setProvider = function() {
       log.debug("MEETONE - overrode web3.setProvider");
@@ -101,6 +101,25 @@ export default class MetamaskInject {
         resolve(res.result);
       });
     });
+  }
+
+  // Example POST method implementation:
+  async postData(url = "", data = {}) {
+    // Default options are marked with *
+    const response = await fetch(url, {
+      method: "POST", // *GET, POST, PUT, DELETE, etc.
+      // mode: "cors", // no-cors, *cors, same-origin
+      // cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
+      // credentials: "same-origin", // include, *same-origin, omit
+      headers: {
+        "Content-Type": "application/json",
+        // 'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      // redirect: "follow", // manual, *follow, error
+      // referrerPolicy: "no-referrer", // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+      body: JSON.stringify(data), // body data type must match "Content-Type" header
+    });
+    return response.json(); // parses JSON response into native JavaScript objects
   }
 
   /**
@@ -123,14 +142,77 @@ export default class MetamaskInject {
     const { method, params } = payload;
     console.info("Receive Async Message: ");
     console.info(payload);
+    console.log(cb);
     // console.info(payload);
     switch (method) {
+      case "eth_chainId": {
+        cb(null, {
+          id: payload.id,
+          jsonrpc: payload.jsonrpc,
+          result: this.networkVersion,
+        });
+        break;
+      }
+      case "eth_blockNumber": {
+        // cb(null, {
+        //   id: payload.id,
+        //   jsonrpc: payload.jsonrpc,
+        //   result: "0x4b7",
+        // });
+        // return
+        this.bridge
+          .customGenerate({
+            routeName: "eth/eth_blockNumber",
+            params: {},
+          })
+          .then((res) => {
+            if (res.code == 0) {
+              cb(null, {
+                id: payload.id,
+                jsonrpc: payload.jsonrpc,
+                result: res.data.blockNumber,
+              });
+            } else {
+              cb({ code: 4001, message: "User denied" }, null);
+            }
+          });
+
+        break;
+      }
+      /** 根据地址余额 */
+      case "eth_getBalance": {
+        /*
+          - DATA, 20 Bytes - address to check for balance.
+          - QUANTITY|TAG - integer block number, or the string "latest", "earliest" or "pending", see the default block parameter
+         */
+        const [address, tag = "latest"] = params;
+        this.bridge
+          .customGenerate({
+            routeName: "eth/eth_getBalance",
+            params: {
+              address,
+              tag,
+            },
+          })
+          .then((res) => {
+            if (res.code == 0) {
+              cb(null, {
+                id: payload.id,
+                jsonrpc: payload.jsonrpc,
+                result: res.data.balance,
+              });
+            } else {
+              cb({ code: 4001, message: "User denied" }, null);
+            }
+          });
+        break;
+      }
       case "eth_coinbase": {
         cb(null, {
           id: payload.id,
           jsonrpc: payload.jsonrpc,
-          result: this.selectedAddress
-        })
+          result: this.selectedAddress,
+        });
         break;
       }
       case "eth_uninstallFilter": {
@@ -194,8 +276,10 @@ export default class MetamaskInject {
           gas,
           to, // string
           from = this.selectedAddress, // string, default is current address
-          value = "0x00", // string,
-          data = "0x00", // string
+          value,
+          data,
+          // value = "0x00", // string,
+          // data = "0x00", // string
           // chainId = this.chainId
         } = params[0];
 
@@ -226,40 +310,57 @@ export default class MetamaskInject {
       }
 
       /** Executes a new message call immediately without creating a transaction on the block chain. */
-      case 'eth_call': {
-        let {
-          // nonce = "0x00", // Nonce [ignored]
-          gasPrice,
-          gas,
-          to, // string
-          from = this.selectedAddress, // string, default is current address
-          value = "0x00", // string,
-          data = "0x00", // string
-          // chainId = this.chainId
-        } = params[0];
-        this.bridge
-          .customGenerate({
-            routeName: "eth/eth_call",
-            params: {
-              from,
-              to,
-              gasPrice,
-              gas,
-              value,
-              data,
-            },
-          })
-          .then((res) => {
-            if (res.code == 0) {
-              cb(null, {
-                id: payload.id,
-                jsonrpc: payload.jsonrpc,
-                result: res.data.txid || "0x",
-              });
-            } else {
-              cb({ code: 4001, message: "User denied" }, null);
-            }
+      case "eth_call": {
+        // let {
+        //   // nonce = "0x00", // Nonce [ignored]
+        //   gasPrice,
+        //   gas,
+        //   to, // string
+        //   from = this.selectedAddress, // string, default is current address
+        //   // from,
+        //   // value = "0x00", // string,
+        //   // data = "0x00", // string
+        //   value,
+        //   data,
+        //   // chainId = this.chainId
+        // } = params[0];
+        // this.bridge
+        //   .customGenerate({
+        //     routeName: "eth/eth_call",
+        //     params: {
+        //       from,
+        //       to,
+        //       data,
+        //       gasPrice,
+        //       gas,
+        //       value,
+        //     },
+        //   })
+        //   .then((res) => {
+        //     if (res.code == 0) {
+        //       cb(null, {
+        //         id: payload.id,
+        //         jsonrpc: payload.jsonrpc,
+        //         result: res.data.result
+        //       });
+        //     } else {
+        //       cb({ code: 4001, message: "User denied" }, null);
+        //     }
+        //   });
+        // TODO: 这里先不走协议了, 直接在前端做PRC调用, 但是这样不好, 后面还是要做成协议
+        // 不调用库的话, 直接POST到当前网络的PRC接口就行
+        this.postData("https://node3.web3api.com/", {
+          jsonrpc: payload.jsonrpc,
+          id: payload.id,
+          method: "eth_call",
+          params: params,
+        }).then((response) => {
+          cb(null, {
+            id: payload.id,
+            jsonrpc: payload.jsonrpc,
+            result: response.result,
           });
+        });
         break;
       }
 
@@ -370,7 +471,7 @@ export default class MetamaskInject {
   }
 
   _sendSync(payload) {
-    console.info("Receive Sync Message: " + payload.method);
+    console.info("Receive Sync Message: " + JSON.stringify(payload));
     let selectedAddress = this.selectedAddress;
     let result = null;
     switch (payload.method) {
@@ -400,7 +501,7 @@ export default class MetamaskInject {
   }
 
   send(payload, callback) {
-    console.info('========拦截到的Metamask协议[send]=========');
+    console.info("========拦截到的Metamask协议[send]=========");
     console.info(payload);
 
     /* 如果这里有指定回调函数的参数, 意味着这是个异步操作, 走 `sendAsync` 的逻辑 */
