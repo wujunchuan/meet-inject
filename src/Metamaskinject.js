@@ -3,7 +3,7 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-07-18 14:13:52
+ * @LastEditTime: 2020-07-18 14:18:11
  * @FilePath: /src/Metamaskinject.js
  */
 
@@ -140,9 +140,8 @@ export default class MetamaskInject {
    */
   sendAsync(payload, cb) {
     const { method, params } = payload;
-    console.info("Receive Async Message: ");
-    console.info(payload);
-    console.log(cb);
+    // console.info("Receive Async Message: ");
+    // console.info(payload);
     // console.info(payload);
     switch (method) {
       case "eth_chainId": {
@@ -471,7 +470,7 @@ export default class MetamaskInject {
   }
 
   _sendSync(payload) {
-    console.info("Receive Sync Message: " + JSON.stringify(payload));
+    // console.info("Receive Sync Message: " + JSON.stringify(payload));
     let selectedAddress = this.selectedAddress;
     let result = null;
     switch (payload.method) {
@@ -501,8 +500,8 @@ export default class MetamaskInject {
   }
 
   send(payload, callback) {
-    console.info("========拦截到的Metamask协议[send]=========");
-    console.info(payload);
+    // console.info("========拦截到的Metamask协议[send]=========");
+    // console.info(payload);
 
     /* 如果这里有指定回调函数的参数, 意味着这是个异步操作, 走 `sendAsync` 的逻辑 */
     if (callback) {
