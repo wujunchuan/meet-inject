@@ -3,7 +3,7 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-07-18 14:18:11
+ * @LastEditTime: 2020-07-19 19:35:33
  * @FilePath: /src/Metamaskinject.js
  */
 
@@ -142,7 +142,6 @@ export default class MetamaskInject {
     const { method, params } = payload;
     // console.info("Receive Async Message: ");
     // console.info(payload);
-    // console.info(payload);
     switch (method) {
       case "eth_chainId": {
         cb(null, {
@@ -153,12 +152,6 @@ export default class MetamaskInject {
         break;
       }
       case "eth_blockNumber": {
-        // cb(null, {
-        //   id: payload.id,
-        //   jsonrpc: payload.jsonrpc,
-        //   result: "0x4b7",
-        // });
-        // return
         this.bridge
           .customGenerate({
             routeName: "eth/eth_blockNumber",
@@ -277,9 +270,6 @@ export default class MetamaskInject {
           from = this.selectedAddress, // string, default is current address
           value,
           data,
-          // value = "0x00", // string,
-          // data = "0x00", // string
-          // chainId = this.chainId
         } = params[0];
 
         this.bridge
@@ -308,72 +298,9 @@ export default class MetamaskInject {
         break;
       }
 
-      /** Executes a new message call immediately without creating a transaction on the block chain. */
-      case "eth_call": {
-        // let {
-        //   // nonce = "0x00", // Nonce [ignored]
-        //   gasPrice,
-        //   gas,
-        //   to, // string
-        //   from = this.selectedAddress, // string, default is current address
-        //   // from,
-        //   // value = "0x00", // string,
-        //   // data = "0x00", // string
-        //   value,
-        //   data,
-        //   // chainId = this.chainId
-        // } = params[0];
-        // this.bridge
-        //   .customGenerate({
-        //     routeName: "eth/eth_call",
-        //     params: {
-        //       from,
-        //       to,
-        //       data,
-        //       gasPrice,
-        //       gas,
-        //       value,
-        //     },
-        //   })
-        //   .then((res) => {
-        //     if (res.code == 0) {
-        //       cb(null, {
-        //         id: payload.id,
-        //         jsonrpc: payload.jsonrpc,
-        //         result: res.data.result
-        //       });
-        //     } else {
-        //       cb({ code: 4001, message: "User denied" }, null);
-        //     }
-        //   });
-        // TODO: 这里先不走协议了, 直接在前端做PRC调用, 但是这样不好, 后面还是要做成协议
-        // 不调用库的话, 直接POST到当前网络的PRC接口就行
-        this.postData("https://node3.web3api.com/", {
-          jsonrpc: payload.jsonrpc,
-          id: payload.id,
-          method: "eth_call",
-          params: params,
-        }).then((response) => {
-          cb(null, {
-            id: payload.id,
-            jsonrpc: payload.jsonrpc,
-            result: response.result,
-          });
-        });
-        break;
-      }
-
       // https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_sign
       case "eth_sign": {
         const [from, message] = params;
-        /* mock data */
-        // cb(null, {
-        //   id: payload.id,
-        //   jsonrpc: payload.jsonrpc,
-        //   result:
-        //     "0xaa85078d9420b2ac275a71121f17e8cded803fca89af0725460f4bfa525eaa536a89c5f60e44635d2579442dbd56a960dc94717acb4c0c73f6a980de5ba4a2e01c",
-        // });
-        // return;
         this.bridge
           .customGenerate({
             routeName: "eth/eth_sign",
@@ -398,13 +325,6 @@ export default class MetamaskInject {
       /** sign - personal_sign */
       case "personal_sign": {
         const [msg, from] = params;
-        // cb(null, {
-        //   id: payload.id,
-        //   jsonrpc: payload.jsonrpc,
-        //   result:
-        //     "0x4d4378882bf3b591dde496190365dce23962403ec7ff20cf7d49c5e12fdeaa5f2c842c2df53a9d75d177898042b06310dd62542f24042da168e65e701eb8c9521c",
-        // });
-        // return;
         this.bridge
           .customGenerate({
             routeName: "eth/personal_sign",
@@ -431,13 +351,6 @@ export default class MetamaskInject {
         let [text, sign] = params;
         // NOTE: eth.personal_ecRecover的参数中字符串前面加上了 `0x0`
         text = text.startsWith("0x0") ? text.slice(3) : text;
-        /* mock data */
-        // cb(null, {
-        //   id: payload.id,
-        //   jsonrpc: payload.jsonrpc,
-        //   result: "0x49a8246758f8d28e348318183d9498496074ca71",
-        // });
-        // return;
         this.bridge
           .customGenerate({
             routeName: "eth/personal_ecRecover",
@@ -463,7 +376,24 @@ export default class MetamaskInject {
       }
 
       default:
-        console.warn("No implement method: " + method + " yet");
+        /* attempt to try call JSON-PRC [eth_call, eth_estimateGas]*/
+        this.postData("https://api.infura.io/v1/jsonrpc/mainnet", {
+          jsonrpc: payload.jsonrpc,
+          id: payload.id,
+          method: method,
+          params: params,
+        }).then((response) => {
+          cb(null, {
+            id: payload.id,
+            jsonrpc: payload.jsonrpc,
+            result: response.result,
+          });
+        }).catch(err => {
+          // cb({ code: 4001, message: JSON.stringify(err) }, null);
+          console.log(err)
+        })
+        break;
+        // console.warn("No implement method: " + method + " yet");
       // 此处不能抛出异常, 否则Dapps会崩溃
       // throw new Error("No implement method: " + method + " yet");
     }
