@@ -3,7 +3,7 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-07-19 19:35:33
+ * @LastEditTime: 2020-07-24 10:52:33
  * @FilePath: /src/Metamaskinject.js
  */
 
@@ -142,6 +142,7 @@ export default class MetamaskInject {
     const { method, params } = payload;
     // console.info("Receive Async Message: ");
     // console.info(payload);
+    console.log(method);
     switch (method) {
       case "eth_chainId": {
         cb(null, {
@@ -149,6 +150,70 @@ export default class MetamaskInject {
           jsonrpc: payload.jsonrpc,
           result: this.networkVersion,
         });
+        break;
+      }
+      case "eth_getBlockByHash": {
+        this.bridge
+          .customGenerate({
+            routeName: "eth/eth_getBlockByHash",
+            params: {
+              params0: params[0],
+              params1: params[1]
+            }
+          })
+          .then((res) => {
+            if (res.code == 0) {
+              cb(null, {
+                id: payload.id,
+                jsonrpc: payload.jsonrpc,
+                result: JSON.parse(res.data.result),
+              });
+            } else {
+              cb({ code: 4001, message: "User denied" }, null);
+            }
+          });
+      }
+      case "eth_getBlockByNumber": {
+        this.bridge
+          .customGenerate({
+            routeName: "eth/eth_getBlockByNumber",
+            params: {
+              params0: params[0],
+              params1: params[1]
+            },
+          })
+          .then((res) => {
+            if (res.code == 0) {
+              cb(null, {
+                id: payload.id,
+                jsonrpc: payload.jsonrpc,
+                result: JSON.parse(res.data.result),
+              });
+            } else {
+              cb({ code: 4001, message: "User denied" }, null);
+            }
+          });
+        break;
+      }
+      case "eth_getTransactionByHash": {
+        this.bridge
+          .customGenerate({
+            routeName: "eth/eth_getTransactionByHash",
+            params: {
+              params0: params[0]
+            },
+          })
+          .then((res) => {
+            if (res.code == 0) {
+              cb(null, {
+                id: payload.id,
+                jsonrpc: payload.jsonrpc,
+                result: JSON.parse(res.data.result),
+              });
+            } else {
+              cb({ code: 4001, message: "User denied" }, null);
+            }
+          });
         break;
       }
       case "eth_blockNumber": {
@@ -382,18 +447,20 @@ export default class MetamaskInject {
           id: payload.id,
           method: method,
           params: params,
-        }).then((response) => {
-          cb(null, {
-            id: payload.id,
-            jsonrpc: payload.jsonrpc,
-            result: response.result,
-          });
-        }).catch(err => {
-          // cb({ code: 4001, message: JSON.stringify(err) }, null);
-          console.log(err)
         })
+          .then((response) => {
+            cb(null, {
+              id: payload.id,
+              jsonrpc: payload.jsonrpc,
+              result: response.result,
+            });
+          })
+          .catch((err) => {
+            // cb({ code: 4001, message: JSON.stringify(err) }, null);
+            console.log(err);
+          });
         break;
-        // console.warn("No implement method: " + method + " yet");
+      // console.warn("No implement method: " + method + " yet");
       // 此处不能抛出异常, 否则Dapps会崩溃
       // throw new Error("No implement method: " + method + " yet");
     }
