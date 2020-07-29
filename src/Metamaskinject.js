@@ -3,7 +3,7 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-07-29 11:46:08
+ * @LastEditTime: 2020-07-29 14:33:46
  * @FilePath: /src/Metamaskinject.js
  */
 
@@ -172,6 +172,7 @@ export default class MetamaskInject {
               cb({ code: 4001, message: "User denied" }, null);
             }
           });
+        break;
       }
       case "eth_getBlockByNumber": {
         this.bridge
@@ -238,10 +239,6 @@ export default class MetamaskInject {
       }
       /** 根据地址余额 */
       case "eth_getBalance": {
-        /*
-          - DATA, 20 Bytes - address to check for balance.
-          - QUANTITY|TAG - integer block number, or the string "latest", "earliest" or "pending", see the default block parameter
-         */
         const [address, tag = "latest"] = params;
         this.bridge
           .customGenerate({
@@ -440,25 +437,29 @@ export default class MetamaskInject {
         break;
       }
 
-      default:
-        /* attempt to try call JSON-PRC [eth_call, eth_estimateGas]*/
-        // this.postData("https://api.infura.io/v1/jsonrpc/mainnet", {
-        //   jsonrpc: payload.jsonrpc,
-        //   id: payload.id,
-        //   method: method,
-        //   params: params,
-        // })
-        //   .then((response) => {
-        //     cb(null, {
-        //       id: payload.id,
-        //       jsonrpc: payload.jsonrpc,
-        //       result: response.result,
-        //     });
-        //   })
-        //   .catch((err) => {
-        //     console.log(err);
-        //   });
-        // break;
+      /* attempt to try call JSON-PRC [eth_call, eth_estimateGas]*/
+      case "eth_call":
+      case "eth_estimateGas": {
+        this.postData("https://api.infura.io/v1/jsonrpc/mainnet", {
+          jsonrpc: payload.jsonrpc,
+          id: payload.id,
+          method: method,
+          params: params,
+        })
+          .then((response) => {
+            cb(null, {
+              id: payload.id,
+              jsonrpc: payload.jsonrpc,
+              result: response.result,
+            });
+          })
+          .catch((err) => {
+            console.log(err);
+          });
+        break;
+      }
+
+      default: {
         // https://eth.wiki/json-rpc/API
         this.bridge
           .customGenerate({
@@ -488,6 +489,7 @@ export default class MetamaskInject {
               cb({ code: 4001, message: "User denied" }, null);
             }
           });
+      }
     }
   }
 
