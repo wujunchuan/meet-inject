@@ -3,7 +3,7 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-07-24 10:52:33
+ * @LastEditTime: 2020-07-29 11:46:08
  * @FilePath: /src/Metamaskinject.js
  */
 
@@ -158,8 +158,8 @@ export default class MetamaskInject {
             routeName: "eth/eth_getBlockByHash",
             params: {
               params0: params[0],
-              params1: params[1]
-            }
+              params1: params[1],
+            },
           })
           .then((res) => {
             if (res.code == 0) {
@@ -179,7 +179,7 @@ export default class MetamaskInject {
             routeName: "eth/eth_getBlockByNumber",
             params: {
               params0: params[0],
-              params1: params[1]
+              params1: params[1],
             },
           })
           .then((res) => {
@@ -200,7 +200,7 @@ export default class MetamaskInject {
           .customGenerate({
             routeName: "eth/eth_getTransactionByHash",
             params: {
-              params0: params[0]
+              params0: params[0],
             },
           })
           .then((res) => {
@@ -442,27 +442,52 @@ export default class MetamaskInject {
 
       default:
         /* attempt to try call JSON-PRC [eth_call, eth_estimateGas]*/
-        this.postData("https://api.infura.io/v1/jsonrpc/mainnet", {
-          jsonrpc: payload.jsonrpc,
-          id: payload.id,
-          method: method,
-          params: params,
-        })
-          .then((response) => {
-            cb(null, {
-              id: payload.id,
-              jsonrpc: payload.jsonrpc,
-              result: response.result,
-            });
+        // this.postData("https://api.infura.io/v1/jsonrpc/mainnet", {
+        //   jsonrpc: payload.jsonrpc,
+        //   id: payload.id,
+        //   method: method,
+        //   params: params,
+        // })
+        //   .then((response) => {
+        //     cb(null, {
+        //       id: payload.id,
+        //       jsonrpc: payload.jsonrpc,
+        //       result: response.result,
+        //     });
+        //   })
+        //   .catch((err) => {
+        //     console.log(err);
+        //   });
+        // break;
+        // https://eth.wiki/json-rpc/API
+        this.bridge
+          .customGenerate({
+            routeName: `eth/${method}`,
+            params: {
+              params0: params[0],
+              params1: params[1],
+              params2: params[2],
+              params3: params[3],
+              params4: params[4],
+              params5: params[5],
+              params6: params[6],
+              params7: params[7],
+              params8: params[8],
+              params9: params[9],
+              params10: params[10],
+            },
           })
-          .catch((err) => {
-            // cb({ code: 4001, message: JSON.stringify(err) }, null);
-            console.log(err);
+          .then((res) => {
+            if (res.code == 0) {
+              cb(null, {
+                id: payload.id,
+                jsonrpc: payload.jsonrpc,
+                result: res.data.result,
+              });
+            } else {
+              cb({ code: 4001, message: "User denied" }, null);
+            }
           });
-        break;
-      // console.warn("No implement method: " + method + " yet");
-      // 此处不能抛出异常, 否则Dapps会崩溃
-      // throw new Error("No implement method: " + method + " yet");
     }
   }
 
