@@ -3,7 +3,7 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-07-30 16:50:36
+ * @LastEditTime: 2020-07-31 14:38:30
  * @FilePath: /src/Metamaskinject.js
  */
 
@@ -49,7 +49,7 @@ export default class MetamaskInject {
       TODO: 目前的 networkVersion 与 chainId为写死状态, 代表主网
       鉴于客户端当前并没有支持多个网络的ETH, 所以先写死
      */
-    this.networkVersion = 1; // enum<number> -> '1': Ethereum Main Network
+    this.networkVersion = "1"; // enum<string> -> '1': Ethereum Main Network
     this.chainId = "0x1";
 
     /** 兼容 metamask-specific convenience methods */
