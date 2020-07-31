@@ -3,7 +3,7 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-07-29 14:33:46
+ * @LastEditTime: 2020-07-30 16:50:36
  * @FilePath: /src/Metamaskinject.js
  */
 
@@ -142,7 +142,7 @@ export default class MetamaskInject {
     const { method, params } = payload;
     // console.info("Receive Async Message: ");
     // console.info(payload);
-    console.log(method);
+    console.log({method, params});
     switch (method) {
       case "eth_chainId": {
         cb(null, {
@@ -169,7 +169,7 @@ export default class MetamaskInject {
                 result: JSON.parse(res.data.result),
               });
             } else {
-              cb({ code: 4001, message: "User denied" }, null);
+              cb({ code: 4001, message: "User denied", method: method }, null);
             }
           });
         break;
@@ -191,7 +191,7 @@ export default class MetamaskInject {
                 result: JSON.parse(res.data.result),
               });
             } else {
-              cb({ code: 4001, message: "User denied" }, null);
+              cb({ code: 4001, message: "User denied", method: method }, null);
             }
           });
         break;
@@ -212,7 +212,7 @@ export default class MetamaskInject {
                 result: JSON.parse(res.data.result),
               });
             } else {
-              cb({ code: 4001, message: "User denied" }, null);
+              cb({ code: 4001, message: "User denied", method: method }, null);
             }
           });
         break;
@@ -231,7 +231,7 @@ export default class MetamaskInject {
                 result: res.data.blockNumber,
               });
             } else {
-              cb({ code: 4001, message: "User denied" }, null);
+              cb({ code: 4001, message: "User denied", method: method }, null);
             }
           });
 
@@ -256,7 +256,7 @@ export default class MetamaskInject {
                 result: res.data.balance,
               });
             } else {
-              cb({ code: 4001, message: "User denied" }, null);
+              cb({ code: 4001, message: "User denied", method: method }, null);
             }
           });
         break;
@@ -316,7 +316,7 @@ export default class MetamaskInject {
                 result: [pbk],
               });
             } else {
-              cb({ code: 4001, message: "User denied" }, null);
+              cb({ code: 4001, message: "User denied", method: method }, null);
             }
           });
         break;
@@ -354,7 +354,7 @@ export default class MetamaskInject {
                 result: res.data.txid,
               });
             } else {
-              cb({ code: 4001, message: "User denied" }, null);
+              cb({ code: 4001, message: "User denied", method: method }, null);
             }
           });
         break;
@@ -379,7 +379,7 @@ export default class MetamaskInject {
                 result: res.data.sig,
               });
             } else {
-              cb({ code: 4001, message: "User denied" }, null);
+              cb({ code: 4001, message: "User denied", method: method }, null);
             }
           });
         break;
@@ -403,7 +403,7 @@ export default class MetamaskInject {
                 result: res.data.sig,
               });
             } else {
-              cb({ code: 4001, message: "User denied" }, null);
+              cb({ code: 4001, message: "User denied", method: method }, null);
             }
           });
         break;
@@ -431,7 +431,7 @@ export default class MetamaskInject {
               });
             } else {
               // failed
-              cb({ code: 4001, message: "User denied" }, null);
+              cb({ code: 4001, message: "User denied", method: method }, null);
             }
           });
         break;
@@ -486,7 +486,7 @@ export default class MetamaskInject {
                 result: res.data.result,
               });
             } else {
-              cb({ code: 4001, message: "User denied" }, null);
+              cb({ code: 4001, message: "User denied", method: method }, null);
             }
           });
       }
