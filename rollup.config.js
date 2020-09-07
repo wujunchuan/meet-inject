@@ -1,8 +1,9 @@
 import resolve from "rollup-plugin-node-resolve";
 import commonjs from "rollup-plugin-commonjs";
 import babel from "rollup-plugin-babel";
-import { uglify } from "rollup-plugin-uglify";
+// import { uglify } from "rollup-plugin-uglify";
 import json from 'rollup-plugin-json';
+import builtins from 'rollup-plugin-node-builtins';
 
 import pkg from "./package.json";
 
@@ -19,7 +20,9 @@ export default [
       exclude: "node_modules/**"
     },
     plugins: [
-      resolve(), // so Rollup can find `ms`
+      resolve({
+        browser: true,  // Default: false
+      }), // so Rollup can find `ms`
       commonjs(), // so Rollup can convert `ms` to an ES module
       json(),
       babel({
@@ -27,7 +30,8 @@ export default [
         // plugins:
         //   process.env.NODE_ENV === "production" ? ["external-helpers"] : []
       }),
-      process.env.NODE_ENV === "production" && uglify()
+      builtins(),
+      // process.env.NODE_ENV === "production" && uglify()
     ]
   }
 

@@ -5,10 +5,13 @@
   "module": "dist/meetone-webview-inject.esm.js",
   "browser": "dist/meetone-webview-inject.iife.js",
   "dependencies": {
+    "axios": "^0.20.0",
     "buffer": "^5.2.1",
     "eosjs": "git://github.com/wujunchuan/eosjs.git#maintain-16.x.x",
     "meet-bridge": "^2.1.2",
     "rollup-plugin-json": "^4.0.0",
+    "rollup-plugin-node-builtins": "^2.1.2",
+    "tronweb": "^3.0.0",
     "web3": "0.20.7"
   },
   "devDependencies": {

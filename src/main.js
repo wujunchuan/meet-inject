@@ -7,10 +7,11 @@
  */
 // 因为使用了async await 语法, rollup打包有这个问题
 // ref: https://github.com/rollup/rollup-plugin-babel/issues/209
-import 'regenerator-runtime/runtime'
+import "regenerator-runtime/runtime";
 
 import ScatterInject from "./ScatterInject";
 import Metamaskinject from "./Metamaskinject";
+import { Troninject } from "./Troninject";
 
 import MeetBridge from "meet-bridge";
 
@@ -26,10 +27,11 @@ export default function main() {
   } catch (error) {
     console.log(error);
   }
+
   let tryTimes = 0;
   function tryInitMetamaskInject() {
     if (tryTimes >= 100) return;
-    if (typeof window.Web3 === 'function') {
+    if (typeof window.Web3 === "function") {
       try {
         new Metamaskinject(bridge);
       } catch (err) {
@@ -44,8 +46,10 @@ export default function main() {
   }
   tryInitMetamaskInject();
 
+  Troninject.init(bridge);
+
   // 超时时间设定, 因为不能比较好的兼容旧版本,只能在新版本发包前,往已有的JS中注入全局变量 `isSupportMeetoneSdk`来兼容
-  window.document.addEventListener("message", e => {
+  window.document.addEventListener("message", (e) => {
     try {
       // @ts-ignore
       const { params, callbackId } = JSON.parse(e.data);
