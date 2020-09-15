@@ -3,16 +3,16 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-07-31 14:38:30
+ * @LastEditTime: 2020-09-15 19:32:48
  * @FilePath: /src/Metamaskinject.js
  */
 
-// 测试请打开
-// const Web3 = require("web3");
 /**
  * Extracts a name for the site from the DOM
  * 获取Dapps名称
  */
+import { TypedDataUtils, typedSignatureHash } from "eth-sig-util";
+
 function getSiteName(window) {
   const { document } = window;
 
@@ -46,11 +46,12 @@ export default class MetamaskInject {
       icon: "", // icon, 获取方法待定
     };
     /*
-      TODO: 目前的 networkVersion 与 chainId为写死状态, 代表主网
       鉴于客户端当前并没有支持多个网络的ETH, 所以先写死
      */
-    this.networkVersion = "1"; // enum<string> -> '1': Ethereum Main Network
-    this.chainId = "0x1";
+    // this.networkVersion = "1"; // enum<string> -> '1': Ethereum Main Network
+    // this.chainId = "0x1";
+    this.networkVersion = ""; // enum<string> -> '1': Ethereum Main Network
+    this.chainId = "";
 
     /** 兼容 metamask-specific convenience methods */
     this._metamask = new Proxy(
@@ -97,8 +98,10 @@ export default class MetamaskInject {
    */
   async enable() {
     return new Promise((resolve) => {
-      this.sendAsync({ method: "eth_requestAccounts" }, (_err, res) => {
-        resolve(res.result);
+      this.sendAsync({ method: "eth_chainId" }, (_err, res) => {
+        this.sendAsync({ method: "eth_requestAccounts" }, (_err, res) => {
+          resolve(res.result);
+        });
       });
     });
   }
@@ -108,15 +111,9 @@ export default class MetamaskInject {
     // Default options are marked with *
     const response = await fetch(url, {
       method: "POST", // *GET, POST, PUT, DELETE, etc.
-      // mode: "cors", // no-cors, *cors, same-origin
-      // cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
-      // credentials: "same-origin", // include, *same-origin, omit
       headers: {
         "Content-Type": "application/json",
-        // 'Content-Type': 'application/x-www-form-urlencoded',
       },
-      // redirect: "follow", // manual, *follow, error
-      // referrerPolicy: "no-referrer", // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
       body: JSON.stringify(data), // body data type must match "Content-Type" header
     });
     return response.json(); // parses JSON response into native JavaScript objects
@@ -142,14 +139,42 @@ export default class MetamaskInject {
     const { method, params } = payload;
     // console.info("Receive Async Message: ");
     // console.info(payload);
-    console.log({method, params});
+    console.log({ method, params });
     switch (method) {
       case "eth_chainId": {
-        cb(null, {
-          id: payload.id,
-          jsonrpc: payload.jsonrpc,
-          result: this.networkVersion,
-        });
+        // // TODO: 不再直接返回, 而是去请求客户端, 获取当前链id
+        // cb(null, {
+        //   id: payload.id,
+        //   jsonrpc: payload.jsonrpc,
+        //   result: this.networkVersion,
+        // });
+        // return;
+
+        this.bridge
+          .customGenerate({
+            routeName: "eth/eth_chainId",
+            params: {},
+          })
+          .then((res) => {
+            if (res.code == 0) {
+              this.chainId = res.data.chainId;
+              this.networkVersion = res.data.networkVersion;
+              cb(null, {
+                id: payload.id,
+                jsonrpc: payload.jsonrpc,
+                result: this.chainId,
+              });
+            } else {
+              cb(
+                {
+                  code: 4004,
+                  message: "eth_chainId not found",
+                  method: method,
+                },
+                null
+              );
+            }
+          });
         break;
       }
       case "eth_getBlockByHash": {
@@ -436,6 +461,85 @@ export default class MetamaskInject {
           });
         break;
       }
+      case "eth_signTypedData_v1":
+      case "eth_signTypedData": {
+        const [typedData, from] = params;
+        const message = typedSignatureHash(typedData);
+        this.bridge
+          .customGenerate({
+            routeName: "eth/sign_typed_data",
+            params: {
+              typedData,
+              message,
+              from,
+            },
+          })
+          .then((res) => {
+            if (res.code == 0) {
+              cb(null, {
+                id: payload.id,
+                jsonrpc: payload.jsonrpc,
+                result: res.data.sig,
+              });
+            } else {
+              cb({ code: 4001, message: "User denied", method: method }, null);
+            }
+          });
+        break;
+      }
+      case "eth_signTypedData_v3": {
+        let [from, typedData] = params;
+        typedData = JSON.parse(typedData);
+        const message = TypedDataUtils.sign(typedData, false);
+        this.bridge
+          .customGenerate({
+            routeName: "eth/sign_typed_data",
+            params: {
+              typedData,
+              message,
+              from,
+            },
+          })
+          .then((res) => {
+            if (res.code == 0) {
+              cb(null, {
+                id: payload.id,
+                jsonrpc: payload.jsonrpc,
+                result: res.data.sig,
+              });
+            } else {
+              cb({ code: 4001, message: "User denied", method: method }, null);
+            }
+          });
+        break;
+      }
+
+      case "eth_signTypedData_v4": {
+        let [from, typedData] = params;
+        typedData = JSON.parse(typedData);
+        const message = TypedDataUtils.sign(typedData);
+        this.bridge
+          .customGenerate({
+            routeName: "eth/sign_typed_data",
+            params: {
+              typedData,
+              message,
+              from,
+            },
+          })
+          .then((res) => {
+            if (res.code == 0) {
+              cb(null, {
+                id: payload.id,
+                jsonrpc: payload.jsonrpc,
+                result: res.data.sig,
+              });
+            } else {
+              cb({ code: 4001, message: "User denied", method: method }, null);
+            }
+          });
+        break;
+      }
 
       /* attempt to try call JSON-PRC [eth_call, eth_estimateGas]*/
       case "eth_call":
@@ -524,9 +628,6 @@ export default class MetamaskInject {
   }
 
   send(payload, callback) {
-    // console.info("========拦截到的Metamask协议[send]=========");
-    // console.info(payload);
-
     /* 如果这里有指定回调函数的参数, 意味着这是个异步操作, 走 `sendAsync` 的逻辑 */
     if (callback) {
       this.sendAsync(payload, callback);

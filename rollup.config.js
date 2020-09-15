@@ -4,6 +4,7 @@ import babel from "rollup-plugin-babel";
 // import { uglify } from "rollup-plugin-uglify";
 import json from 'rollup-plugin-json';
 import builtins from 'rollup-plugin-node-builtins';
+import globals from 'rollup-plugin-node-globals';
 
 import pkg from "./package.json";
 
@@ -14,7 +15,8 @@ export default [
     output: {
       name: "meetoneWebviewInject",
       file: pkg.browser,
-      format: "iife"
+      format: "iife",
+      intro: 'var global = typeof self !== undefined ? self : this;'
     },
     watch: {
       exclude: "node_modules/**"
@@ -23,13 +25,16 @@ export default [
       resolve({
         browser: true,  // Default: false
       }), // so Rollup can find `ms`
-      commonjs(), // so Rollup can convert `ms` to an ES module
+      commonjs({
+        include: ['node_modules/**']
+      }), // so Rollup can convert `ms` to an ES module
       json(),
       babel({
         exclude: "node_modules/**"
         // plugins:
         //   process.env.NODE_ENV === "production" ? ["external-helpers"] : []
       }),
+      globals(),
       builtins(),
       // process.env.NODE_ENV === "production" && uglify()
     ]

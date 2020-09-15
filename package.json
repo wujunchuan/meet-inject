@@ -8,9 +8,11 @@
     "axios": "^0.20.0",
     "buffer": "^5.2.1",
     "eosjs": "git://github.com/wujunchuan/eosjs.git#maintain-16.x.x",
+    "eth-sig-util": "^2.5.3",
     "meet-bridge": "^2.1.2",
     "rollup-plugin-json": "^4.0.0",
     "rollup-plugin-node-builtins": "^2.1.2",
+    "rollup-plugin-node-globals": "^1.4.0",
     "tronweb": "^3.0.0",
     "web3": "0.20.7"
   },
