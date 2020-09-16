@@ -31,8 +31,8 @@ export default function main() {
     if (typeof window.Web3 === "function") {
       try {
         const metamaskInject = new Metamaskinject(bridge);
-        metamaskInject.enable();
         /* 主动尝试enable */
+        metamaskInject.enable();
       } catch (err) {
         console.log(err);
       }

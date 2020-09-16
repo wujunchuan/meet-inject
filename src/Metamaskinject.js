@@ -3,7 +3,7 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-09-16 15:35:16
+ * @LastEditTime: 2020-09-16 17:55:33
  * @FilePath: /src/Metamaskinject.js
  */
 
@@ -46,13 +46,11 @@ export default class MetamaskInject {
       name: getSiteName(window), //Dapps名称
       icon: "", // icon, 获取方法待定
     };
-    /*
-      鉴于客户端当前并没有支持多个网络的ETH, 所以先写死
-     */
-    // this.networkVersion = "1"; // enum<string> -> '1': Ethereum Main Network
-    // this.chainId = "0x1";
-    this.networkVersion = "1"; // enum<string> -> '1': Ethereum Main Network
+
+    this.networkVersion = "1";
     this.chainId = "0x1";
+    /** 当前节点 */
+    this.endPoint = 'https://api.infura.io/';
 
     /** 兼容 metamask-specific convenience methods */
     this._metamask = new Proxy(
@@ -160,6 +158,7 @@ export default class MetamaskInject {
             if (res.code == 0) {
               this.chainId = res.data.chainId;
               this.networkVersion = res.data.networkVersion;
+              this.endPoint = res.data.url;
               cb(null, {
                 id: payload.id,
                 jsonrpc: payload.jsonrpc,
@@ -547,7 +546,7 @@ export default class MetamaskInject {
       /* attempt to try call JSON-PRC [eth_call, eth_estimateGas]*/
       case "eth_call":
       case "eth_estimateGas": {
-        this.postData("https://api.infura.io/v1/jsonrpc/mainnet", {
+        this.postData(this.endPoint, {
           jsonrpc: payload.jsonrpc,
           id: payload.id,
           method: method,
