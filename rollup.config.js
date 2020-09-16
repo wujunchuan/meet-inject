@@ -6,6 +6,9 @@ import json from 'rollup-plugin-json';
 import builtins from 'rollup-plugin-node-builtins';
 import globals from 'rollup-plugin-node-globals';
 
+/* 此依赖需要特殊处理一下, ref: https://github.com/rollup/rollup-plugin-commonjs/issues/403#issuecomment-519696236 */
+import ethUtil from 'ethereumjs-util';
+
 import pkg from "./package.json";
 
 export default [
@@ -26,7 +29,11 @@ export default [
         browser: true,  // Default: false
       }), // so Rollup can find `ms`
       commonjs({
-        include: ['node_modules/**']
+        include: ['node_modules/**'],
+        namedExports: {
+          // 'ethereumjs-util': ['bufferToHex']
+          'ethereumjs-util': Object.keys(ethUtil)
+        }
       }), // so Rollup can convert `ms` to an ES module
       json(),
       babel({

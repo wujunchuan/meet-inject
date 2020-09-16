@@ -3,7 +3,7 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-09-15 19:32:48
+ * @LastEditTime: 2020-09-16 14:03:56
  * @FilePath: /src/Metamaskinject.js
  */
 
@@ -12,6 +12,7 @@
  * 获取Dapps名称
  */
 import { TypedDataUtils, typedSignatureHash } from "eth-sig-util";
+import { bufferToHex } from "ethereumjs-util";
 
 function getSiteName(window) {
   const { document } = window;
@@ -50,8 +51,8 @@ export default class MetamaskInject {
      */
     // this.networkVersion = "1"; // enum<string> -> '1': Ethereum Main Network
     // this.chainId = "0x1";
-    this.networkVersion = ""; // enum<string> -> '1': Ethereum Main Network
-    this.chainId = "";
+    this.networkVersion = "1"; // enum<string> -> '1': Ethereum Main Network
+    this.chainId = "0x1";
 
     /** 兼容 metamask-specific convenience methods */
     this._metamask = new Proxy(
@@ -464,7 +465,7 @@ export default class MetamaskInject {
       case "eth_signTypedData_v1":
       case "eth_signTypedData": {
         const [typedData, from] = params;
-        const message = typedSignatureHash(typedData);
+        const message = typedSignatureHash(typedData); // mark: 这个方法已经将Buffer转换成hex字符串了
         this.bridge
           .customGenerate({
             routeName: "eth/sign_typed_data",
@@ -490,7 +491,8 @@ export default class MetamaskInject {
       case "eth_signTypedData_v3": {
         let [from, typedData] = params;
         typedData = JSON.parse(typedData);
-        const message = TypedDataUtils.sign(typedData, false);
+        let message = TypedDataUtils.sign(typedData, false);
+        message = bufferToHex(message);
         this.bridge
           .customGenerate({
             routeName: "eth/sign_typed_data",
@@ -517,7 +519,8 @@ export default class MetamaskInject {
       case "eth_signTypedData_v4": {
         let [from, typedData] = params;
         typedData = JSON.parse(typedData);
-        const message = TypedDataUtils.sign(typedData);
+        let message = TypedDataUtils.sign(typedData);
+        message = bufferToHex(message);
         this.bridge
           .customGenerate({
             routeName: "eth/sign_typed_data",
