@@ -1,7 +1,7 @@
 import resolve from "rollup-plugin-node-resolve";
 import commonjs from "rollup-plugin-commonjs";
 import babel from "rollup-plugin-babel";
-// import { uglify } from "rollup-plugin-uglify";
+import { terser } from "rollup-plugin-terser";
 import json from 'rollup-plugin-json';
 import builtins from 'rollup-plugin-node-builtins';
 import globals from 'rollup-plugin-node-globals';
@@ -43,7 +43,7 @@ export default [
       }),
       globals(),
       builtins(),
-      // process.env.NODE_ENV === "production" && uglify()
+      process.env.NODE_ENV === "production" && terser(),
     ]
   }
 

@@ -19,9 +19,6 @@ const bridge = new MeetBridge();
 window.meetBridge = bridge;
 
 export default function main() {
-  // 先初始化MEETONE协议桥
-  // new ScatterInject(bridge);
-  // new Metamaskinject(bridge);
   try {
     new ScatterInject(bridge);
   } catch (error) {
