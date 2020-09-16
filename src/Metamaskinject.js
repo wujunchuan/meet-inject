@@ -3,7 +3,7 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-09-16 14:03:56
+ * @LastEditTime: 2020-09-16 15:35:16
  * @FilePath: /src/Metamaskinject.js
  */
 

@@ -33,7 +33,9 @@ export default function main() {
     if (tryTimes >= 100) return;
     if (typeof window.Web3 === "function") {
       try {
-        new Metamaskinject(bridge);
+        const metamaskInject = new Metamaskinject(bridge);
+        metamaskInject.enable();
+        /* 主动尝试enable */
       } catch (err) {
         console.log(err);
       }
