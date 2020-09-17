@@ -30,9 +30,10 @@ export default function main() {
     if (tryTimes >= 100) return;
     if (typeof window.Web3 === "function") {
       try {
-        const metamaskInject = new Metamaskinject(bridge);
+        // const metamaskInject =
+        new Metamaskinject(bridge);
         /* 主动尝试enable */
-        metamaskInject.enable();
+        // metamaskInject.enable();
       } catch (err) {
         console.log(err);
       }
