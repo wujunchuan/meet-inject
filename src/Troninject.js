@@ -3,7 +3,7 @@
  * @Author: John Trump
  * @Date: 2020-09-06 16:01:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-09-07 15:07:43
+ * @LastEditTime: 2020-09-21 17:10:21
  */
 
 // node_modules/tronweb/dist/TronWeb.js
@@ -89,7 +89,6 @@ export const Troninject = {
     this.bridge = bridge;
     this.wallet = "MEETONE";
     this._bindTronWeb();
-
     // MOCK: 假装获取账号
     // setTimeout(() => {
     //   const {
@@ -114,14 +113,18 @@ export const Troninject = {
       })
       .then((res) => {
         if (res.code == 0) {
-          const {
-            address,
-            name,
-            type,
-            node
-          } = res.data;
+          const { address, name, type, node } = res.data;
           if (address) this.setAddress({ address, name, type });
-          if (node.fullNode) this.setNode(node);
+
+          if (node.eventServer && node.fullNode && node.solidityNode) {
+            // {
+            //   eventServer: "https://api.shasta.trongrid.io",
+            //   fullNode: "https://api.shasta.trongrid.io",
+            //   solidityNode: "https://api.shasta.trongrid.io",
+            // }
+            this.setNode(node);
+          }
+
           console.log("MEETONE-Tron initiated");
         } else {
           throw new Error(JSON.stringify(res));
@@ -188,6 +191,7 @@ export const Troninject = {
     tronWeb.solidityNode.configure(node.solidityNode);
     tronWeb.eventServer.configure(node.eventServer);
   },
+
   /** 签名 */
   sign(
     transaction,
