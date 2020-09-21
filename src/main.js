@@ -11,7 +11,7 @@ import "regenerator-runtime/runtime";
 
 import ScatterInject from "./ScatterInject";
 import Metamaskinject from "./Metamaskinject";
-// import { Troninject } from "./Troninject";
+import { Troninject } from "./Troninject";
 
 import MeetBridge from "meet-bridge";
 
@@ -46,7 +46,7 @@ export default function main() {
   }
   tryInitMetamaskInject();
 
-  // Troninject.init(bridge);
+  Troninject.init(bridge);
 
   // 超时时间设定, 因为不能比较好的兼容旧版本,只能在新版本发包前,往已有的JS中注入全局变量 `isSupportMeetoneSdk`来兼容
   window.document.addEventListener("message", (e) => {
