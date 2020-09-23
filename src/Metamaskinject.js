@@ -3,7 +3,7 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-09-16 17:55:33
+ * @LastEditTime: 2020-09-23 17:18:34
  * @FilePath: /src/Metamaskinject.js
  */
 
@@ -49,8 +49,8 @@ export default class MetamaskInject {
 
     this.networkVersion = "1";
     this.chainId = "0x1";
-    /** 当前节点 */
-    this.endPoint = 'https://api.infura.io/';
+    /** 当前节点, 设置一个默认值 */
+    this.endPoint = 'https://api.infura.io/v1/jsonrpc/mainnet';
 
     /** 兼容 metamask-specific convenience methods */
     this._metamask = new Proxy(
@@ -84,7 +84,7 @@ export default class MetamaskInject {
     console.log("注入成功", window.web3);
 
     web3.setProvider = function() {
-      log.debug("MEETONE - overrode web3.setProvider");
+      log.debug("MEETONE - override web3.setProvider");
     };
   }
   isConnected() {
@@ -141,14 +141,6 @@ export default class MetamaskInject {
     console.log({ method, params });
     switch (method) {
       case "eth_chainId": {
-        // // TODO: 不再直接返回, 而是去请求客户端, 获取当前链id
-        // cb(null, {
-        //   id: payload.id,
-        //   jsonrpc: payload.jsonrpc,
-        //   result: this.networkVersion,
-        // });
-        // return;
-
         this.bridge
           .customGenerate({
             routeName: "eth/eth_chainId",
