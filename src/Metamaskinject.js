@@ -3,7 +3,7 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-09-23 17:18:34
+ * @LastEditTime: 2020-10-15 11:48:39
  * @FilePath: /src/Metamaskinject.js
  */
 
@@ -50,7 +50,7 @@ export default class MetamaskInject {
     this.networkVersion = "1";
     this.chainId = "0x1";
     /** 当前节点, 设置一个默认值 */
-    this.endPoint = 'https://api.infura.io/v1/jsonrpc/mainnet';
+    this.endPoint = "https://api.infura.io/v1/jsonrpc/mainnet";
 
     /** 兼容 metamask-specific convenience methods */
     this._metamask = new Proxy(
@@ -629,6 +629,31 @@ export default class MetamaskInject {
       /* 如果没有回调函数的参数, 则意味着这是个同步操作, 执行 `_sendSync` 的逻辑 */
       return this._sendSync(payload);
     }
+  }
+
+  /* https://docs.metamask.io/guide/ethereum-provider.html#methods */
+  request(args) {
+    // resolve response.result or response, reject errors
+    const getRpcPromiseCallback = (resolve, reject, unwrapResult = true) => (
+      error,
+      response
+    ) => {
+      if (error || response.error) {
+        reject(error || response.error);
+      } else {
+        !unwrapResult || Array.isArray(response)
+          ? resolve(response)
+          : resolve(response.result);
+      }
+    };
+
+    const { method, params } = args;
+    return new Promise((resolve, reject) => {
+      this.sendAsync(
+        { method, params },
+        getRpcPromiseCallback(resolve, reject)
+      );
+    });
   }
 
   /** 手机客户端没有在Dapps中 切换账号与切换网络的需求, 所以这个方法不予实现 */
