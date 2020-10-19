@@ -3,7 +3,7 @@
  * @Author: John Trump
  * @Date: 2020-06-01 15:31:33
  * @LastEditors: John Trump
- * @LastEditTime: 2020-10-15 11:48:39
+ * @LastEditTime: 2020-10-19 10:40:30
  * @FilePath: /src/Metamaskinject.js
  */
 
@@ -647,10 +647,15 @@ export default class MetamaskInject {
       }
     };
 
-    const { method, params } = args;
+    const {
+      method,
+      params,
+      jsonrpc = "2.0",
+      id = Math.floor(Math.random() * 100),
+    } = args;
     return new Promise((resolve, reject) => {
       this.sendAsync(
-        { method, params },
+        { method, params, jsonrpc, id },
         getRpcPromiseCallback(resolve, reject)
       );
     });
