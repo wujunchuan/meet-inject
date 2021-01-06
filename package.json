@@ -5,7 +5,7 @@
   "module": "dist/meetone-webview-inject.esm.js",
   "browser": "dist/meetone-webview-inject.iife.js",
   "dependencies": {
-    "axios": "^0.20.0",
+    "axios": "^0.21.1",
     "buffer": "^5.2.1",
     "eosjs": "git://github.com/wujunchuan/eosjs.git#maintain-16.x.x",
     "eth-sig-util": "^2.5.3",
