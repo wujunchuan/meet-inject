@@ -1,7 +1,3 @@
-# Introduction
-
-通过对主流的钱包SDK接口的模拟以实现Dapps在钱包的适配
-
 ## Rollup 打包 JavaScript
 
 https://juejin.im/post/5a9fe754f265da237d028f37
